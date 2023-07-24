@@ -11,11 +11,14 @@
   "license": "ISC",
   "devDependencies": {
     "@parcel/packager-raw-url": "^2.9.3",
+    "@parcel/packager-xml": "^2.9.3",
     "@parcel/transformer-elm": "^2.9.3",
     "@parcel/transformer-webmanifest": "^2.9.3",
+    "@parcel/transformer-xml": "^2.9.3",
     "elm": "^0.19.1-5",
     "elm-format": "^0.8.7",
     "elm-test": "^0.19.1-revision12",
-    "parcel": "^2.9.3"
+    "parcel": "^2.9.3",
+    "sharp": "^0.31.3"
   }
 }

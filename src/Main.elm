@@ -20,14 +20,19 @@ import Utilities exposing (arrayRemoveAt, updateArrayAt)
 -- MAIN
 
 
-main : Program () Model Msg
+main : Program Flags Model Msg
 main =
     Browser.document
         { view = view
-        , init = \_ -> init
+        , init = init
         , update = update
         , subscriptions = \_ -> Sub.none
         }
+
+
+type alias Flags =
+    { assets : Assets
+    }
 
 
 
@@ -36,13 +41,18 @@ main =
 
 type alias Model =
     { lifecycle : Lifecycle
+    , assets : Assets
+    }
+
+
+type alias Assets =
+    { logo : String
     }
 
 
 type Lifecycle
     = Welcome
     | Routes RoutesData
-    | Payouts
 
 
 type alias RoutesData =
@@ -57,9 +67,10 @@ type Focus
     | Unfocused
 
 
-init : ( Model, Cmd Msg )
-init =
-    ( { lifecycle = Routes { routes = Array.empty, focus = FocusedNew }
+init : Flags -> ( Model, Cmd Msg )
+init flags =
+    ( { lifecycle = Welcome
+      , assets = flags.assets
       }
     , Cmd.none
     )
@@ -71,6 +82,7 @@ init =
 
 type Msg
     = NoOp
+    | Start
     | RoutesMsg RoutesMsg
 
 
@@ -89,13 +101,14 @@ update msg model =
         NoOp ->
             ( model, Cmd.none )
 
+        Start ->
+            ( { model | lifecycle = Routes { routes = Array.empty, focus = Unfocused } }
+            , Cmd.none
+            )
+
         RoutesMsg routesMsg ->
             case model.lifecycle of
                 Welcome ->
-                    -- error
-                    ( model, Cmd.none )
-
-                Payouts ->
                     -- error
                     ( model, Cmd.none )
 
@@ -182,7 +195,9 @@ update msg model =
 
                                 FocusedNew ->
                                     -- NoOp
-                                    ( model, Cmd.none )
+                                    ( { model | lifecycle = Routes { data | focus = Unfocused } }
+                                    , Cmd.none
+                                    )
 
                                 Focused focusIndex ->
                                     case Array.get focusIndex data.routes of
@@ -195,7 +210,7 @@ update msg model =
                                                     if newAmount == 0 then
                                                         { data
                                                             | routes = arrayRemoveAt focusIndex data.routes
-                                                            , focus = Unfocused
+                                                            , focus = FocusedNew
                                                         }
 
                                                     else
@@ -262,15 +277,12 @@ renderUi model =
         pageUi =
             case model.lifecycle of
                 Welcome ->
-                    welcomeUi
+                    welcomeUi model.assets
 
                 Routes routesData ->
                     routesUi routesData
-
-                Payouts ->
-                    payoutsUi
     in
-    { title = pageUi.title ++ " | 18xxpert"
+    { title = pageUi.title
     , body =
         el
             [ width fill
@@ -281,18 +293,72 @@ renderUi model =
     }
 
 
-welcomeUi : Ui
-welcomeUi =
-    { title = "Welcome"
+welcomeUi : Assets -> Ui
+welcomeUi assets =
+    { title = "18xxpert"
     , body =
-        Element.text "Welcome"
+        column
+            [ width fill
+            , spacing 30
+            ]
+            [ row
+                [ width fill
+                , padding 10
+                , spacing 10
+                , Background.color <| rgb255 200 200 60
+                , Font.size 18
+                ]
+                [ el [ centerX ] <| text "18xxpert"
+                ]
+            , Input.button
+                [ centerX ]
+                { onPress = Just Start
+                , label =
+                    column
+                        [ width fill
+                        ]
+                        [ image
+                            [ width <| px 200
+                            ]
+                            { src = assets.logo
+                            , description = "18xxpert logo, a picture of a steam train with trees behind"
+                            }
+                        , row
+                            [ centerX
+                            , paddingEach { top = 15, bottom = 15, left = 20, right = 15 }
+                            , Background.color <|
+                                -- green
+                                rgb255 40 120 40
+                            , Font.color <| rgba255 255 255 255 0.8
+                            , spacing 10
+                            ]
+                            [ el [] <| text "Start"
+                            , el [] <|
+                                html <|
+                                    (FontAwesome.Solid.play
+                                        |> FontAwesome.withId "route-add-new-"
+                                        |> FontAwesome.titled "Add new route"
+                                        |> FontAwesome.styled
+                                            [ FontAwesome.Attributes.xs
+                                            , FontAwesome.Attributes.fw
+                                            ]
+                                        |> FontAwesome.view
+                                    )
+                            ]
+                        ]
+                }
+            , paragraph
+                [ centerX
+                ]
+                [ text "18xx interactive player aid" ]
+            ]
     , modal = Nothing
     }
 
 
 routesUi : RoutesData -> Ui
 routesUi routesData =
-    { title = "Routes"
+    { title = "Routes | 18xxpert"
     , body =
         column
             [ width fill
@@ -309,7 +375,7 @@ routesUi routesData =
                         [ width fill
                         , height <| px 60
                         , padding 10
-                        , Background.color <| rgb255 200 200 200
+                        , Background.color <| rgb255 255 255 255
                         ]
                         { onPress = Just <| RoutesMsg FocusOnNewRoute
                         , label =
@@ -330,7 +396,6 @@ routesUi routesData =
                                 , el
                                     [ Font.size 18
                                     , Font.color <| rgb255 80 80 80
-                                    , alignBottom
                                     ]
                                   <|
                                     text "Add route"
@@ -363,7 +428,6 @@ routesUi routesData =
                                 , el
                                     [ Font.size 18
                                     , Font.color <| rgb255 80 80 80
-                                    , alignBottom
                                     ]
                                   <|
                                     text "Add route"
@@ -434,7 +498,6 @@ routesUi routesData =
                             , paddingXY 5 3
                             , Font.size 18
                             , Font.alignLeft
-                            , alignBottom
                             , Font.color <| rgba255 220 220 220 0.8
                             ]
                           <|
@@ -445,7 +508,6 @@ routesUi routesData =
                             [ width <| fillPortion 2
                             , paddingXY 6 0
                             , Font.alignRight
-                            , alignBottom
                             , Font.bold
                             ]
                           <|
@@ -500,7 +562,8 @@ routeUi focus index amount =
                     , height fill
                     ]
                     [ el
-                        [ width <| px 40 ]
+                        [ width <| px 40
+                        ]
                         (if focused then
                             html <|
                                 (FontAwesome.Solid.chevronRight
@@ -536,10 +599,9 @@ routeUi focus index amount =
                                     ]
                                 |> FontAwesome.view
                             )
-                    , el [ height fill ] <|
-                        el [ alignBottom ] <|
-                            text <|
-                                String.fromInt amount
+                    , el [] <|
+                        text <|
+                            String.fromInt amount
                     ]
             }
         , Input.button
@@ -570,22 +632,12 @@ routeUi focus index amount =
         ]
 
 
-payoutsUi : Ui
-payoutsUi =
-    { title = "Payouts"
-    , body =
-        Element.text "Payouts"
-    , modal = Nothing
-    }
-
-
 numpad : Focus -> Element Msg
 numpad focus =
     let
         buttonAttrs =
             [ width fill
             , height <| px 60
-            , alignBottom
             , Background.color <| rgb255 200 200 200
             ]
     in
@@ -760,7 +812,6 @@ payoutRow shareCount total =
             , paddingXY 5 0
             , Font.size 24
             , Font.alignLeft
-            , alignBottom
             , Font.color <| rgba255 100 100 100 0.8
             ]
           <|
@@ -775,7 +826,6 @@ payoutRow shareCount total =
             [ width fill
             , paddingXY 6 0
             , Font.alignRight
-            , alignBottom
             ]
           <|
             text
