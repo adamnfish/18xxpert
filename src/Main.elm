@@ -375,7 +375,7 @@ routesUi routesData =
                         [ width fill
                         , height <| px 60
                         , padding 10
-                        , Background.color <| rgb255 255 255 255
+                        , Background.color <| rgb255 200 200 200
                         ]
                         { onPress = Just <| RoutesMsg FocusOnNewRoute
                         , label =
