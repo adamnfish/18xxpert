@@ -188,14 +188,8 @@ update msg model =
                                     case Array.get focusIndex data.routes of
                                         Just currentAmount ->
                                             let
-                                                _ =
-                                                    Debug.log "currentAmount" currentAmount
-
                                                 newAmount =
                                                     currentAmount // 10
-
-                                                _ =
-                                                    Debug.log "newAmount" newAmount
 
                                                 newData =
                                                     if newAmount == 0 then
