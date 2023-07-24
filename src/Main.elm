@@ -47,13 +47,19 @@ type Lifecycle
 
 type alias RoutesData =
     { routes : Array Int
-    , focus : Maybe Int
+    , focus : Focus
     }
+
+
+type Focus
+    = Focused Int
+    | FocusedNew
+    | Unfocused
 
 
 init : ( Model, Cmd Msg )
 init =
-    ( { lifecycle = Routes { routes = Array.empty, focus = Nothing }
+    ( { lifecycle = Routes { routes = Array.empty, focus = FocusedNew }
       }
     , Cmd.none
     )
@@ -72,7 +78,7 @@ type RoutesMsg
     = NumpadEntry Int
     | NumpadBackspace
     | FocusRoute Int
-    | UnfocusRoute
+    | FocusOnNewRoute
     | DeleteRoute Int
     | CloseNumpad
 
@@ -97,7 +103,11 @@ update msg model =
                     case routesMsg of
                         NumpadEntry n ->
                             case data.focus of
-                                Nothing ->
+                                Unfocused ->
+                                    -- error
+                                    ( model, Cmd.none )
+
+                                FocusedNew ->
                                     -- add new route, focus it, and add this amount to it
                                     let
                                         newRoutes =
@@ -108,13 +118,13 @@ update msg model =
                                             Routes
                                                 { data
                                                     | routes = newRoutes
-                                                    , focus = Just <| Array.length data.routes
+                                                    , focus = Focused <| Array.length data.routes
                                                 }
                                       }
                                     , Cmd.none
                                     )
 
-                                Just focusIndex ->
+                                Focused focusIndex ->
                                     case Array.get focusIndex data.routes of
                                         Just currentAmount ->
                                             let
@@ -137,12 +147,12 @@ update msg model =
                                             ( model, Cmd.none )
 
                         FocusRoute focusIndex ->
-                            ( { model | lifecycle = Routes { data | focus = Just focusIndex } }
+                            ( { model | lifecycle = Routes { data | focus = Focused focusIndex } }
                             , Cmd.none
                             )
 
-                        UnfocusRoute ->
-                            ( { model | lifecycle = Routes { data | focus = Nothing } }
+                        FocusOnNewRoute ->
+                            ( { model | lifecycle = Routes { data | focus = FocusedNew } }
                             , Cmd.none
                             )
 
@@ -155,8 +165,8 @@ update msg model =
                                     { data
                                         | routes = newRoutes
                                         , focus =
-                                            if data.focus == Just index then
-                                                Nothing
+                                            if data.focus == Focused index then
+                                                Unfocused
 
                                             else
                                                 data.focus
@@ -166,11 +176,15 @@ update msg model =
 
                         NumpadBackspace ->
                             case data.focus of
-                                Nothing ->
+                                Unfocused ->
                                     -- error
                                     ( model, Cmd.none )
 
-                                Just focusIndex ->
+                                FocusedNew ->
+                                    -- NoOp
+                                    ( model, Cmd.none )
+
+                                Focused focusIndex ->
                                     case Array.get focusIndex data.routes of
                                         Just currentAmount ->
                                             let
@@ -187,7 +201,7 @@ update msg model =
                                                     if newAmount == 0 then
                                                         { data
                                                             | routes = arrayRemoveAt focusIndex data.routes
-                                                            , focus = Nothing
+                                                            , focus = Unfocused
                                                         }
 
                                                     else
@@ -203,7 +217,9 @@ update msg model =
 
                         CloseNumpad ->
                             -- todo: use focus maybe properly
-                            ( model, Cmd.none )
+                            ( { model | lifecycle = Routes { data | focus = Unfocused } }
+                            , Cmd.none
+                            )
 
 
 routesTotal : RoutesData -> Int
@@ -294,14 +310,14 @@ routesUi routesData =
                 ]
                 (Array.indexedMap (routeUi routesData.focus) routesData.routes |> Array.toList)
             , case routesData.focus of
-                Just focus ->
+                Unfocused ->
                     Input.button
                         [ width fill
                         , height <| px 60
                         , padding 10
                         , Background.color <| rgb255 200 200 200
                         ]
-                        { onPress = Just <| RoutesMsg UnfocusRoute
+                        { onPress = Just <| RoutesMsg FocusOnNewRoute
                         , label =
                             row
                                 [ width fill
@@ -327,12 +343,45 @@ routesUi routesData =
                                 ]
                         }
 
-                Nothing ->
-                    row
+                Focused focusIndex ->
+                    Input.button
                         [ width fill
                         , height <| px 60
                         , padding 10
                         , Background.color <| rgb255 200 200 200
+                        ]
+                        { onPress = Just <| RoutesMsg FocusOnNewRoute
+                        , label =
+                            row
+                                [ width fill
+                                ]
+                                [ el [ width <| px 40 ] <|
+                                    html <|
+                                        (FontAwesome.Regular.squarePlus
+                                            |> FontAwesome.withId "route-add-new-"
+                                            |> FontAwesome.titled "Add new route"
+                                            |> FontAwesome.styled
+                                                [ FontAwesome.Attributes.xs
+                                                , FontAwesome.Attributes.fw
+                                                ]
+                                            |> FontAwesome.view
+                                        )
+                                , el
+                                    [ Font.size 18
+                                    , Font.color <| rgb255 80 80 80
+                                    , alignBottom
+                                    ]
+                                  <|
+                                    text "Add route"
+                                ]
+                        }
+
+                FocusedNew ->
+                    row
+                        [ width fill
+                        , height <| px 60
+                        , padding 10
+                        , Background.color <| rgb255 60 200 60
                         ]
                         [ el
                             [ width <| px 40 ]
@@ -422,15 +471,15 @@ routesUi routesData =
               <|
                 Element.none
             ]
-    , modal = Just <| numpad
+    , modal = Just <| numpad routesData.focus
     }
 
 
-routeUi : Maybe Int -> Int -> Int -> Element Msg
-routeUi focusIndex index amount =
+routeUi : Focus -> Int -> Int -> Element Msg
+routeUi focus index amount =
     let
         focused =
-            Just index == focusIndex
+            Focused index == focus
 
         attrs =
             [ width fill
@@ -536,8 +585,8 @@ payoutsUi =
     }
 
 
-numpad : Element Msg
-numpad =
+numpad : Focus -> Element Msg
+numpad focus =
     let
         buttonAttrs =
             [ width fill
@@ -546,124 +595,128 @@ numpad =
             , Background.color <| rgb255 200 200 200
             ]
     in
-    column
-        [ width fill
-        , alignBottom
-        , spacing 5
-        , Border.widthEach { zeroes | top = 4 }
-        , Border.color <| rgb255 60 60 60
-        , Background.color <| rgb255 60 60 60
-        , Font.size 30
-        ]
-        [ row
+    if focus == Unfocused then
+        Element.none
+
+    else
+        column
             [ width fill
+            , alignBottom
             , spacing 5
+            , Border.widthEach { zeroes | top = 4 }
+            , Border.color <| rgb255 60 60 60
+            , Background.color <| rgb255 60 60 60
+            , Font.size 30
             ]
-            [ Input.button
-                buttonAttrs
-                { onPress = Just <| RoutesMsg <| NumpadEntry 1
-                , label = numpadKey 1 FontAwesome.Solid.fa1
-                }
-            , Input.button
-                buttonAttrs
-                { onPress = Just <| RoutesMsg <| NumpadEntry 2
-                , label = numpadKey 2 FontAwesome.Solid.fa2
-                }
-            , Input.button
-                buttonAttrs
-                { onPress = Just <| RoutesMsg <| NumpadEntry 3
-                , label = numpadKey 3 FontAwesome.Solid.fa3
-                }
+            [ row
+                [ width fill
+                , spacing 5
+                ]
+                [ Input.button
+                    buttonAttrs
+                    { onPress = Just <| RoutesMsg <| NumpadEntry 1
+                    , label = numpadKey 1 FontAwesome.Solid.fa1
+                    }
+                , Input.button
+                    buttonAttrs
+                    { onPress = Just <| RoutesMsg <| NumpadEntry 2
+                    , label = numpadKey 2 FontAwesome.Solid.fa2
+                    }
+                , Input.button
+                    buttonAttrs
+                    { onPress = Just <| RoutesMsg <| NumpadEntry 3
+                    , label = numpadKey 3 FontAwesome.Solid.fa3
+                    }
+                ]
+            , row
+                [ width fill
+                , spacing 5
+                ]
+                [ Input.button
+                    buttonAttrs
+                    { onPress = Just <| RoutesMsg <| NumpadEntry 4
+                    , label = numpadKey 4 FontAwesome.Solid.fa4
+                    }
+                , Input.button
+                    buttonAttrs
+                    { onPress = Just <| RoutesMsg <| NumpadEntry 5
+                    , label = numpadKey 5 FontAwesome.Solid.fa5
+                    }
+                , Input.button
+                    buttonAttrs
+                    { onPress = Just <| RoutesMsg <| NumpadEntry 6
+                    , label = numpadKey 6 FontAwesome.Solid.fa6
+                    }
+                ]
+            , row
+                [ width fill
+                , spacing 5
+                ]
+                [ Input.button
+                    buttonAttrs
+                    { onPress = Just <| RoutesMsg <| NumpadEntry 7
+                    , label = numpadKey 7 FontAwesome.Solid.fa7
+                    }
+                , Input.button
+                    buttonAttrs
+                    { onPress = Just <| RoutesMsg <| NumpadEntry 8
+                    , label = numpadKey 8 FontAwesome.Solid.fa8
+                    }
+                , Input.button
+                    buttonAttrs
+                    { onPress = Just <| RoutesMsg <| NumpadEntry 9
+                    , label = numpadKey 9 FontAwesome.Solid.fa9
+                    }
+                ]
+            , row
+                [ width fill
+                , spacing 5
+                ]
+                [ Input.button
+                    buttonAttrs
+                    { onPress = Just <| RoutesMsg <| NumpadBackspace
+                    , label =
+                        el
+                            [ centerX
+                            ]
+                        <|
+                            html <|
+                                (FontAwesome.Solid.backspace
+                                    |> FontAwesome.withId "numpad-backspace"
+                                    |> FontAwesome.titled "Backspace"
+                                    |> FontAwesome.styled
+                                        [ FontAwesome.Attributes.xs
+                                        , FontAwesome.Attributes.fw
+                                        ]
+                                    |> FontAwesome.view
+                                )
+                    }
+                , Input.button
+                    buttonAttrs
+                    { onPress = Just <| RoutesMsg <| NumpadEntry 0
+                    , label = numpadKey 0 FontAwesome.Solid.fa0
+                    }
+                , Input.button
+                    buttonAttrs
+                    { onPress = Just <| RoutesMsg CloseNumpad
+                    , label =
+                        el
+                            [ centerX
+                            ]
+                        <|
+                            html <|
+                                (FontAwesome.Solid.caretDown
+                                    |> FontAwesome.withId "numpad-close"
+                                    |> FontAwesome.titled "Close number pad"
+                                    |> FontAwesome.styled
+                                        [ FontAwesome.Attributes.xs
+                                        , FontAwesome.Attributes.fw
+                                        ]
+                                    |> FontAwesome.view
+                                )
+                    }
+                ]
             ]
-        , row
-            [ width fill
-            , spacing 5
-            ]
-            [ Input.button
-                buttonAttrs
-                { onPress = Just <| RoutesMsg <| NumpadEntry 4
-                , label = numpadKey 4 FontAwesome.Solid.fa4
-                }
-            , Input.button
-                buttonAttrs
-                { onPress = Just <| RoutesMsg <| NumpadEntry 5
-                , label = numpadKey 5 FontAwesome.Solid.fa5
-                }
-            , Input.button
-                buttonAttrs
-                { onPress = Just <| RoutesMsg <| NumpadEntry 6
-                , label = numpadKey 6 FontAwesome.Solid.fa6
-                }
-            ]
-        , row
-            [ width fill
-            , spacing 5
-            ]
-            [ Input.button
-                buttonAttrs
-                { onPress = Just <| RoutesMsg <| NumpadEntry 7
-                , label = numpadKey 7 FontAwesome.Solid.fa7
-                }
-            , Input.button
-                buttonAttrs
-                { onPress = Just <| RoutesMsg <| NumpadEntry 8
-                , label = numpadKey 8 FontAwesome.Solid.fa8
-                }
-            , Input.button
-                buttonAttrs
-                { onPress = Just <| RoutesMsg <| NumpadEntry 9
-                , label = numpadKey 9 FontAwesome.Solid.fa9
-                }
-            ]
-        , row
-            [ width fill
-            , spacing 5
-            ]
-            [ Input.button
-                buttonAttrs
-                { onPress = Just <| RoutesMsg <| NumpadBackspace
-                , label =
-                    el
-                        [ centerX
-                        ]
-                    <|
-                        html <|
-                            (FontAwesome.Solid.backspace
-                                |> FontAwesome.withId "numpad-backspace"
-                                |> FontAwesome.titled "Backspace"
-                                |> FontAwesome.styled
-                                    [ FontAwesome.Attributes.xs
-                                    , FontAwesome.Attributes.fw
-                                    ]
-                                |> FontAwesome.view
-                            )
-                }
-            , Input.button
-                buttonAttrs
-                { onPress = Just <| RoutesMsg <| NumpadEntry 0
-                , label = numpadKey 0 FontAwesome.Solid.fa0
-                }
-            , Input.button
-                buttonAttrs
-                { onPress = Just <| RoutesMsg CloseNumpad
-                , label =
-                    el
-                        [ centerX
-                        ]
-                    <|
-                        html <|
-                            (FontAwesome.Solid.caretDown
-                                |> FontAwesome.withId "numpad-close"
-                                |> FontAwesome.titled "Close number pad"
-                                |> FontAwesome.styled
-                                    [ FontAwesome.Attributes.xs
-                                    , FontAwesome.Attributes.fw
-                                    ]
-                                |> FontAwesome.view
-                            )
-                }
-            ]
-        ]
 
 
 navRow : String -> Color -> Icon WithoutId -> Element Msg
@@ -731,8 +784,13 @@ payoutRow shareCount total =
             , alignBottom
             ]
           <|
-            text <|
-                String.fromInt (shareCount * total // 10)
+            text
+                (if total == 0 then
+                    "-"
+
+                 else
+                    String.fromInt (shareCount * total // 10)
+                )
         ]
 
 
