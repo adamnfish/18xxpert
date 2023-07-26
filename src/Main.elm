@@ -2,10 +2,8 @@ module Main exposing (..)
 
 import Array exposing (Array)
 import Browser
-import Browser.Dom exposing (Viewport)
 import Browser.Events
 import Model exposing (..)
-import Task
 import Update exposing (update)
 import Views.View exposing (view)
 

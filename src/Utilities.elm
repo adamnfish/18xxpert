@@ -16,6 +16,10 @@ zeroes =
     { top = 0, left = 0, bottom = 0, right = 0 }
 
 
+
+-- array helpers
+
+
 arrayUpdateAt : Int -> (a -> a) -> Array a -> Array a
 arrayUpdateAt index f array =
     let
@@ -58,6 +62,10 @@ arrayRemoveAt index array =
             Array.append left right
 
 
+
+-- setters
+
+
 setRoutes : Array Int -> RoutesData -> RoutesData
 setRoutes routes data =
     let
@@ -70,6 +78,10 @@ setRoutes routes data =
 setFocus : Focus -> RoutesData -> RoutesData
 setFocus focus data =
     { data | focus = focus }
+
+
+
+-- colour
 
 
 clamp : Float -> Float

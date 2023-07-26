@@ -54,8 +54,8 @@ routesUi game routesData =
                             [ el [ width <| px 40 ] <|
                                 html <|
                                     (FontAwesome.Solid.briefcase
-                                        |> FontAwesome.withId "company-add-new-"
-                                        |> FontAwesome.titled "Add new company"
+                                        |> FontAwesome.withId "company-manage-companies"
+                                        |> FontAwesome.titled "Manage companies"
                                         |> FontAwesome.styled
                                             [ FontAwesome.Attributes.xs
                                             , FontAwesome.Attributes.fw
@@ -99,7 +99,7 @@ routesUi game routesData =
                                     [ el [ width <| px 40 ] <|
                                         html <|
                                             (FontAwesome.Regular.squarePlus
-                                                |> FontAwesome.withId "route-add-new-"
+                                                |> FontAwesome.withId "route-unfocused-add-new-"
                                                 |> FontAwesome.titled "Add new route"
                                                 |> FontAwesome.styled
                                                     [ FontAwesome.Attributes.xs
@@ -131,7 +131,7 @@ routesUi game routesData =
                                     [ el [ width <| px 40 ] <|
                                         html <|
                                             (FontAwesome.Regular.squarePlus
-                                                |> FontAwesome.withId "route-add-new-"
+                                                |> FontAwesome.withId "route-focused-add-new-"
                                                 |> FontAwesome.titled "Add new route"
                                                 |> FontAwesome.styled
                                                     [ FontAwesome.Attributes.xs
@@ -172,7 +172,7 @@ routesUi game routesData =
                                 html <|
                                     (FontAwesome.Solid.dollarSign
                                         |> FontAwesome.withId "route-dollar-sign-new"
-                                        |> FontAwesome.titled "Dollars"
+                                        |> FontAwesome.titled "$"
                                         |> FontAwesome.styled
                                             [ FontAwesome.Attributes.xs
                                             , FontAwesome.Attributes.fw
@@ -196,7 +196,7 @@ routesUi game routesData =
                                         html <|
                                             (FontAwesome.Solid.cancel
                                                 |> FontAwesome.withId "numpad-close-from-focused-route"
-                                                |> FontAwesome.titled "Cancel entering route amount"
+                                                |> FontAwesome.titled "Cancel"
                                                 |> FontAwesome.styled
                                                     [ FontAwesome.Attributes.xs
                                                     , FontAwesome.Attributes.fw
@@ -334,7 +334,7 @@ routeUi focus index amount =
                         html <|
                             (FontAwesome.Solid.dollarSign
                                 |> FontAwesome.withId ("route-dollar-sign-" ++ String.fromInt index)
-                                |> FontAwesome.titled "Dollars"
+                                |> FontAwesome.titled "$"
                                 |> FontAwesome.styled
                                     [ FontAwesome.Attributes.xs
                                     , FontAwesome.Attributes.fw
@@ -357,19 +357,34 @@ routeUi focus index amount =
             , Font.center
             , Border.rounded 20
             ]
-            { onPress = Just <| RoutesMsg <| DeleteRoute index
+            { onPress =
+                if focused then
+                    Just <| RoutesMsg CloseNumpad
+
+                else
+                    Just <| RoutesMsg <| DeleteRoute index
             , label =
                 el [ centerX ] <|
                     html <|
-                        (FontAwesome.Solid.trashCan
-                            |> FontAwesome.withId ("route-delete-" ++ String.fromInt index)
-                            |> FontAwesome.titled "Delete route"
-                            |> FontAwesome.styled
-                                [ FontAwesome.Attributes.xs
-                                , FontAwesome.Attributes.fw
-                                ]
-                            |> FontAwesome.view
-                        )
+                        if focused then
+                            FontAwesome.Solid.cancel
+                                |> FontAwesome.withId ("route-close-numpad-cancel-" ++ String.fromInt index)
+                                |> FontAwesome.titled "Cancel"
+                                |> FontAwesome.styled
+                                    [ FontAwesome.Attributes.xs
+                                    , FontAwesome.Attributes.fw
+                                    ]
+                                |> FontAwesome.view
+
+                        else
+                            FontAwesome.Solid.trashCan
+                                |> FontAwesome.withId ("route-delete-" ++ String.fromInt index)
+                                |> FontAwesome.titled "Delete route"
+                                |> FontAwesome.styled
+                                    [ FontAwesome.Attributes.xs
+                                    , FontAwesome.Attributes.fw
+                                    ]
+                                |> FontAwesome.view
             }
         ]
 
@@ -381,6 +396,12 @@ numpad focus =
             [ width fill
             , height <| px 60
             , Background.color <| rgb255 200 200 200
+            , mouseOver
+                [ Background.color <| rgb255 160 160 160
+                ]
+            , mouseDown
+                [ Background.color <| rgb255 220 220 220
+                ]
             ]
     in
     if focus == Unfocused then
@@ -494,7 +515,7 @@ numpad focus =
                         <|
                             html <|
                                 (FontAwesome.Solid.caretDown
-                                    |> FontAwesome.withId "numpad-close"
+                                    |> FontAwesome.withId "numpad-button-close"
                                     |> FontAwesome.titled "Close number pad"
                                     |> FontAwesome.styled
                                         [ FontAwesome.Attributes.xs

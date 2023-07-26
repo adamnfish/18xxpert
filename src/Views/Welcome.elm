@@ -53,8 +53,6 @@ welcomeUi assets =
                             , el [] <|
                                 html <|
                                     (FontAwesome.Solid.play
-                                        |> FontAwesome.withId "route-add-new-"
-                                        |> FontAwesome.titled "Add new route"
                                         |> FontAwesome.styled
                                             [ FontAwesome.Attributes.xs
                                             , FontAwesome.Attributes.fw

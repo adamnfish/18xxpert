@@ -2,6 +2,7 @@ module Views.View exposing (..)
 
 import Browser
 import Element exposing (..)
+import Element.Font as Font
 import FontAwesome.Styles
 import Model exposing (..)
 import Views.Companies exposing (companyUi)
@@ -25,6 +26,10 @@ view model =
             [ width fill
             , height fill
             , inFront modal
+            , Font.family
+                [ Font.typeface "Arial"
+                , Font.sansSerif
+                ]
             ]
           <|
             ui.body

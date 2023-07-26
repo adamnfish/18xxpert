@@ -23,7 +23,7 @@ navRow title bgColour textColour icon =
           <|
             html <|
                 (icon
-                    |> FontAwesome.withId ("nav-item-train-" ++ title)
+                    |> FontAwesome.withId ("nav-item-" ++ title)
                     |> FontAwesome.titled title
                     |> FontAwesome.styled
                         [ FontAwesome.Attributes.xs

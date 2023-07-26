@@ -10,10 +10,6 @@ type alias Flags =
     }
 
 
-
--- MODEL
-
-
 type alias Model =
     { lifecycle : Lifecycle
     , assets : Assets
@@ -77,10 +73,6 @@ type Focus
     = Focused Int
     | FocusedNew
     | Unfocused
-
-
-
--- View models
 
 
 type alias Ui =

@@ -1,10 +1,7 @@
 module Update exposing (..)
 
 import Array
-import Browser.Dom
-import Element exposing (rgb255)
 import Model exposing (..)
-import Task
 import Utilities exposing (arrayRemoveAt, arrayUpdateAt, setFocus, setRoutes)
 
 

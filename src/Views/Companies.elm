@@ -146,7 +146,7 @@ colourPicker window game companyColor =
                             html <|
                                 (FontAwesome.Regular.trashCan
                                     |> FontAwesome.withId ("company-delete-company-" ++ String.fromInt id)
-                                    |> FontAwesome.titled ("Delete company " ++ String.fromInt id)
+                                    |> FontAwesome.titled ("Delete " ++ companyColor.name ++ " company")
                                     |> FontAwesome.styled
                                         [ FontAwesome.Attributes.xs
                                         , FontAwesome.Attributes.fw
@@ -185,7 +185,7 @@ colourPicker window game companyColor =
                     <|
                         html <|
                             (FontAwesome.Regular.squarePlus
-                                |> FontAwesome.withId ("company-delete-company-" ++ colourId companyColor.colour)
+                                |> FontAwesome.withId ("company-add-company-" ++ colourId companyColor.colour)
                                 |> FontAwesome.titled ("Start " ++ companyColor.name ++ " company")
                                 |> FontAwesome.styled
                                     [ FontAwesome.Attributes.xs
