@@ -44,7 +44,7 @@ renderUi model =
                     routesUi model.game routesData
 
                 Companies ->
-                    companyUi model.game
+                    companyUi model.windowDimensions model.game
     in
     { title = pageUi.title
     , body =

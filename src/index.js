@@ -10,6 +10,10 @@ Elm.Main.init({
   flags: {
     assets: {
         logo: logoUrl.href
+    },
+    viewport: {
+      width: window.innerWidth,
+      height: window.innerHeight
     }
   }
 });

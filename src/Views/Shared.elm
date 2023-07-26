@@ -5,16 +5,17 @@ import Element.Background as Background
 import Element.Font as Font
 import FontAwesome exposing (Icon, WithoutId)
 import FontAwesome.Attributes
-import Model exposing (Msg)
+import Model exposing (Company, CompanyColour, Msg, TextBrightness(..))
 
 
-navRow : String -> Color -> Icon WithoutId -> Element Msg
-navRow title colour icon =
+navRow : String -> Color -> Color -> Icon WithoutId -> Element Msg
+navRow title bgColour textColour icon =
     row
         [ width fill
         , padding 10
         , spacing 10
-        , Background.color colour
+        , Background.color bgColour
+        , Font.color textColour
         , Font.size 18
         ]
         [ el
@@ -32,3 +33,21 @@ navRow title colour icon =
                 )
         , el [] <| text title
         ]
+
+
+textColourForCompany : CompanyColour -> Color
+textColourForCompany companyColour =
+    case companyColour.textBrightness of
+        Dark ->
+            rgba255 0 0 0 0.8
+
+        Light ->
+            rgba255 255 255 255 0.8
+
+
+container : List (Attribute Msg) -> List (Attribute Msg)
+container attrs =
+    [ width <| maximum 700 fill
+    , centerX
+    ]
+        ++ attrs

@@ -15,7 +15,7 @@ import FontAwesome.Styles
 import List.Extra
 import Model exposing (..)
 import Utilities exposing (routesTotal, zeroes)
-import Views.Shared exposing (navRow)
+import Views.Shared exposing (container, navRow, textColourForCompany)
 
 
 routesUi : Game -> RoutesData -> Ui
@@ -23,9 +23,13 @@ routesUi game routesData =
     let
         companyColor =
             Array.toList game.companies
-                |> List.Extra.find (\c -> c.id == routesData.companyId)
-                |> Maybe.map .colour
-                |> Maybe.withDefault (rgb255 60 200 60)
+                |> List.Extra.find (\c -> c.id == routesData.company.id)
+                |> Maybe.map (\c -> c.colourInfo)
+                |> Maybe.withDefault
+                    { colour = rgb255 230 230 230
+                    , name = "unknown"
+                    , textBrightness = Dark
+                    }
     in
     { title = "Routes | 18xxpert"
     , body =
@@ -33,10 +37,9 @@ routesUi game routesData =
             [ width fill
             , Font.size 30
             ]
-            [ navRow "companies" (rgb255 200 200 60) FontAwesome.Solid.building
+            [ navRow "companies" (rgb255 60 60 60) (rgba255 255 255 255 0.8) FontAwesome.Solid.building
             , column
-                [ width fill
-                ]
+                [ width fill ]
                 [ Input.button
                     [ width fill
                     , height <| px 60
@@ -70,119 +73,143 @@ routesUi game routesData =
                 , wrappedRow
                     [ width fill
                     , spacing 4
-                    , paddingEach { zeroes | top = 4 }
+                    , paddingEach { top = 4, left = 4, right = 4, bottom = 0 }
                     , Background.color <| rgb255 60 60 60
                     ]
-                    (Array.toList <| Array.map (companySelector game routesData.companyId) game.companies)
+                    (Array.toList <| Array.map (companySelector game routesData.company.id) game.companies)
                 ]
-            , navRow "routes" companyColor FontAwesome.Solid.trainSubway
+            , navRow "routes" companyColor.colour (textColourForCompany companyColor) FontAwesome.Solid.trainSubway
             , column
-                [ width fill
-                ]
-                (Array.indexedMap (routeUi routesData.focus) routesData.routes |> Array.toList)
-            , case routesData.focus of
-                Unfocused ->
-                    Input.button
-                        [ width fill
-                        , height <| px 60
-                        , padding 10
-                        , Background.color <| rgb255 200 200 200
-                        ]
-                        { onPress = Just <| RoutesMsg FocusOnNewRoute
-                        , label =
-                            row
-                                [ width fill
-                                ]
-                                [ el [ width <| px 40 ] <|
-                                    html <|
-                                        (FontAwesome.Regular.squarePlus
-                                            |> FontAwesome.withId "route-add-new-"
-                                            |> FontAwesome.titled "Add new route"
-                                            |> FontAwesome.styled
-                                                [ FontAwesome.Attributes.xs
-                                                , FontAwesome.Attributes.fw
-                                                ]
-                                            |> FontAwesome.view
-                                        )
-                                , el
-                                    [ Font.size 18
-                                    , Font.color <| rgb255 80 80 80
+                [ width fill ]
+                (Array.indexedMap (routeUi routesData.focus) routesData.company.routes |> Array.toList)
+            , el [ width fill ] <|
+                case routesData.focus of
+                    Unfocused ->
+                        Input.button
+                            [ width fill
+                            , height <| px 60
+                            , padding 10
+                            , Background.color <| rgb255 200 200 200
+                            ]
+                            { onPress = Just <| RoutesMsg FocusOnNewRoute
+                            , label =
+                                row
+                                    [ width fill
                                     ]
-                                  <|
-                                    text "Add route"
-                                ]
-                        }
-
-                Focused focusIndex ->
-                    Input.button
-                        [ width fill
-                        , height <| px 60
-                        , padding 10
-                        , Background.color <| rgb255 200 200 200
-                        ]
-                        { onPress = Just <| RoutesMsg FocusOnNewRoute
-                        , label =
-                            row
-                                [ width fill
-                                ]
-                                [ el [ width <| px 40 ] <|
-                                    html <|
-                                        (FontAwesome.Regular.squarePlus
-                                            |> FontAwesome.withId "route-add-new-"
-                                            |> FontAwesome.titled "Add new route"
-                                            |> FontAwesome.styled
-                                                [ FontAwesome.Attributes.xs
-                                                , FontAwesome.Attributes.fw
-                                                ]
-                                            |> FontAwesome.view
-                                        )
-                                , el
-                                    [ Font.size 18
-                                    , Font.color <| rgb255 80 80 80
+                                    [ el [ width <| px 40 ] <|
+                                        html <|
+                                            (FontAwesome.Regular.squarePlus
+                                                |> FontAwesome.withId "route-add-new-"
+                                                |> FontAwesome.titled "Add new route"
+                                                |> FontAwesome.styled
+                                                    [ FontAwesome.Attributes.xs
+                                                    , FontAwesome.Attributes.fw
+                                                    ]
+                                                |> FontAwesome.view
+                                            )
+                                    , el
+                                        [ Font.size 18
+                                        , Font.color <| rgb255 80 80 80
+                                        ]
+                                      <|
+                                        text "Add route"
                                     ]
-                                  <|
-                                    text "Add route"
-                                ]
-                        }
+                            }
 
-                FocusedNew ->
-                    row
-                        [ width fill
-                        , height <| px 60
-                        , padding 10
-                        , Background.color <| rgb255 60 200 60
-                        ]
-                        [ el
-                            [ width <| px 40 ]
-                          <|
-                            html <|
-                                (FontAwesome.Solid.chevronRight
-                                    |> FontAwesome.withId "route-selected-new"
-                                    |> FontAwesome.titled "Selected"
-                                    |> FontAwesome.styled
-                                        [ FontAwesome.Attributes.xs
-                                        , FontAwesome.Attributes.fw
+                    Focused focusIndex ->
+                        Input.button
+                            [ width fill
+                            , height <| px 60
+                            , padding 10
+                            , Background.color <| rgb255 200 200 200
+                            ]
+                            { onPress = Just <| RoutesMsg FocusOnNewRoute
+                            , label =
+                                row
+                                    [ width fill
+                                    ]
+                                    [ el [ width <| px 40 ] <|
+                                        html <|
+                                            (FontAwesome.Regular.squarePlus
+                                                |> FontAwesome.withId "route-add-new-"
+                                                |> FontAwesome.titled "Add new route"
+                                                |> FontAwesome.styled
+                                                    [ FontAwesome.Attributes.xs
+                                                    , FontAwesome.Attributes.fw
+                                                    ]
+                                                |> FontAwesome.view
+                                            )
+                                    , el
+                                        [ Font.size 18
+                                        , Font.color <| rgb255 80 80 80
                                         ]
-                                    |> FontAwesome.view
-                                )
-                        , el [] <|
-                            html <|
-                                (FontAwesome.Solid.dollarSign
-                                    |> FontAwesome.withId "route-dollar-sign-new"
-                                    |> FontAwesome.titled "Dollars"
-                                    |> FontAwesome.styled
-                                        [ FontAwesome.Attributes.xs
-                                        , FontAwesome.Attributes.fw
+                                      <|
+                                        text "Add route"
+                                    ]
+                            }
+
+                    FocusedNew ->
+                        row
+                            [ width fill
+                            , height <| px 60
+                            , paddingEach { top = 10, left = 10, bottom = 10, right = 5 }
+                            , Background.color <| rgb255 60 200 60
+                            ]
+                            [ el
+                                [ width <| px 40 ]
+                              <|
+                                html <|
+                                    (FontAwesome.Solid.chevronRight
+                                        |> FontAwesome.withId "route-selected-new"
+                                        |> FontAwesome.titled "Selected"
+                                        |> FontAwesome.styled
+                                            [ FontAwesome.Attributes.xs
+                                            , FontAwesome.Attributes.fw
+                                            ]
+                                        |> FontAwesome.view
+                                    )
+                            , el [] <|
+                                html <|
+                                    (FontAwesome.Solid.dollarSign
+                                        |> FontAwesome.withId "route-dollar-sign-new"
+                                        |> FontAwesome.titled "Dollars"
+                                        |> FontAwesome.styled
+                                            [ FontAwesome.Attributes.xs
+                                            , FontAwesome.Attributes.fw
+                                            ]
+                                        |> FontAwesome.view
+                                    )
+                            , Input.button
+                                [ width <| px 40
+                                , height <| px 40
+                                , alignRight
+                                , Background.color <| rgb255 200 160 160
+                                , Font.center
+                                , Border.rounded 20
+                                ]
+                                { onPress = Just <| RoutesMsg CloseNumpad
+                                , label =
+                                    el
+                                        [ centerX
                                         ]
-                                    |> FontAwesome.view
-                                )
-                        ]
+                                    <|
+                                        html <|
+                                            (FontAwesome.Solid.cancel
+                                                |> FontAwesome.withId "numpad-close-from-focused-route"
+                                                |> FontAwesome.titled "Cancel entering route amount"
+                                                |> FontAwesome.styled
+                                                    [ FontAwesome.Attributes.xs
+                                                    , FontAwesome.Attributes.fw
+                                                    ]
+                                                |> FontAwesome.view
+                                            )
+                                }
+                            ]
 
             -- result
-            , navRow "payouts" (rgb255 180 120 0) FontAwesome.Solid.moneyBillTransfer
+            , navRow "payouts" companyColor.colour (textColourForCompany companyColor) FontAwesome.Solid.moneyBillTransfer
             , row
-                [ width fill
-                ]
+                [ width fill ]
                 [ column
                     [ width fill ]
                     [ payoutRow 1 (routesTotal routesData)
@@ -230,10 +257,14 @@ routesUi game routesData =
                 ]
 
             -- space for the numpad
-            -- todo: consider focus
             , el
                 [ width fill
-                , height <| px 259
+                , height <|
+                    if routesData.focus == Unfocused then
+                        px 0
+
+                    else
+                        px 256
                 ]
               <|
                 Element.none
@@ -359,7 +390,7 @@ numpad focus =
         column
             [ width fill
             , alignBottom
-            , spacing 5
+            , spacing 4
             , Border.widthEach { zeroes | top = 4 }
             , Border.color <| rgb255 60 60 60
             , Background.color <| rgb255 60 60 60
@@ -367,7 +398,7 @@ numpad focus =
             ]
             [ row
                 [ width fill
-                , spacing 5
+                , spacing 4
                 ]
                 [ Input.button
                     buttonAttrs
@@ -387,7 +418,7 @@ numpad focus =
                 ]
             , row
                 [ width fill
-                , spacing 5
+                , spacing 4
                 ]
                 [ Input.button
                     buttonAttrs
@@ -407,7 +438,7 @@ numpad focus =
                 ]
             , row
                 [ width fill
-                , spacing 5
+                , spacing 4
                 ]
                 [ Input.button
                     buttonAttrs
@@ -427,7 +458,7 @@ numpad focus =
                 ]
             , row
                 [ width fill
-                , spacing 5
+                , spacing 4
                 ]
                 [ Input.button
                     buttonAttrs
@@ -494,10 +525,10 @@ numpadKey n icon =
 
 
 companySelector : Game -> CompanyId -> Company -> Element Msg
-companySelector game (CompanyId companyId) company =
+companySelector game (CompanyId selectedCompanyId) company =
     let
         selected =
-            CompanyId companyId == company.id
+            CompanyId selectedCompanyId == company.id
 
         runningFor =
             Array.toList game.companies
@@ -507,20 +538,23 @@ companySelector game (CompanyId companyId) company =
     in
     if selected then
         el
-            [ height <| px 40
+            [ height <| px 50
             , width <| px 65
-            , Background.color company.colour
+            , Background.color company.colourInfo.colour
             , Font.size 18
+            , Font.color <| textColourForCompany company.colourInfo
+            , Border.widthEach { zeroes | bottom = 4 }
+            , Border.color company.colourInfo.colour
+            , Border.roundEach { topLeft = 4, topRight = 4, bottomLeft = 0, bottomRight = 0 }
             ]
-        --Element.none
         <|
             el
                 [ centerX, centerY ]
             <|
                 html <|
-                    (FontAwesome.Solid.chevronDown
-                        |> FontAwesome.withId ("company-nav-" ++ String.fromInt companyId)
-                        |> FontAwesome.titled ("company " ++ String.fromInt companyId)
+                    (FontAwesome.Solid.pen
+                        |> FontAwesome.withId ("company-nav-selected-" ++ String.fromInt selectedCompanyId)
+                        |> FontAwesome.titled ("company " ++ String.fromInt selectedCompanyId)
                         |> FontAwesome.styled
                             [ FontAwesome.Attributes.xs
                             , FontAwesome.Attributes.fw
@@ -529,25 +563,44 @@ companySelector game (CompanyId companyId) company =
                     )
 
     else
-        Input.button
-            [ height <| px 40
-            , width <| px 65
-            , Background.color company.colour
-            , Font.size 18
-            ]
-            { onPress = Just <| NavMsg <| SelectCompany company.id
-            , label =
-                case runningFor of
-                    Nothing ->
-                        Element.none
+        el
+            [ paddingEach { zeroes | bottom = 4 } ]
+        <|
+            Input.button
+                [ height <| px 46
+                , width <| px 65
+                , Background.color company.colourInfo.colour
+                , Font.size 18
+                , Font.color <| textColourForCompany company.colourInfo
+                , Border.color <| rgb255 60 60 60
+                , Border.rounded 4
+                ]
+                { onPress = Just <| NavMsg <| SelectCompany company.id
+                , label =
+                    case runningFor of
+                        Nothing ->
+                            Element.none
 
-                    Just runAmount ->
-                        el
-                            [ centerX ]
-                        <|
-                            text <|
-                                String.fromInt runAmount
-            }
+                        Just runAmount ->
+                            row
+                                [ centerX ]
+                                [ el
+                                    []
+                                  <|
+                                    html <|
+                                        (FontAwesome.Solid.dollarSign
+                                            |> FontAwesome.withId ("company-nav-dollar-" ++ String.fromInt selectedCompanyId)
+                                            |> FontAwesome.titled "$"
+                                            |> FontAwesome.styled
+                                                [ FontAwesome.Attributes.xs
+                                                , FontAwesome.Attributes.fw
+                                                ]
+                                            |> FontAwesome.view
+                                        )
+                                , text <|
+                                    String.fromInt runAmount
+                                ]
+                }
 
 
 payoutRow : Int -> Int -> Element Msg

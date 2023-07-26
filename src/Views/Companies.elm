@@ -12,96 +12,114 @@ import FontAwesome.Attributes
 import FontAwesome.Regular
 import FontAwesome.Solid
 import List.Extra
-import Model exposing (Company, CompanyId(..), CompanyMsg(..), Game, Msg(..), NavMsg(..), Ui)
+import Model exposing (Company, CompanyColour, CompanyId(..), CompanyMsg(..), Game, Msg(..), NavMsg(..), TextBrightness(..), Ui, WindowDimensions)
 import Utilities exposing (dim, glow, zeroes)
-import Views.Shared exposing (navRow)
+import Views.Shared exposing (container, navRow, textColourForCompany)
 
 
-companyUi : Game -> Ui
-companyUi game =
+companyUi : WindowDimensions -> Game -> Ui
+companyUi window game =
     { title = "New company | 18xxpert"
     , body =
         column
             [ width fill ]
-            [ navRow "companies" (rgb255 200 200 60) FontAwesome.Solid.building
-            , el [ centerX ] <|
-                wrappedRow
-                    [ centerX
-                    , padding 20
-                    , spacing 10
-                    ]
-                    (List.map (colourPicker game) colours)
+            [ navRow "companies" (rgb255 60 60 60) (rgba255 255 255 255 0.8) FontAwesome.Solid.building
+            , el
+                (container [ paddingEach { top = 10, bottom = 10, left = 10, right = 0 } ])
+              <|
+                el
+                    [ centerX ]
+                <|
+                    wrappedRow
+                        [ spacing 10
+                        ]
+                        (List.map (colourPicker window game) colours)
             ]
     , modal = Nothing
     }
 
 
-colourPicker : Game -> CompanyColour -> Element Msg
-colourPicker game companyColor =
+colourPicker : WindowDimensions -> Game -> CompanyColour -> Element Msg
+colourPicker window game companyColor =
     let
         alreadyRunning =
             List.Extra.find
-                (\c -> c.colour == companyColor.colour)
+                (\c -> c.colourInfo.colour == companyColor.colour)
                 (Array.toList game.companies)
                 |> Maybe.map (\c -> ( Array.foldl (+) 0 c.routes, c.id ))
+
+        pillWidth =
+            if window.width < 260 then
+                window.width - 20
+
+            else if window.width < 375 then
+                ((window.width - 21) // 2) - 4
+
+            else if window.width < 520 then
+                ((window.width - 21) // 3) - 6
+
+            else if window.width < 700 then
+                ((window.width - 21) // 4) - 7
+
+            else
+                130
     in
     case alreadyRunning of
         Just ( runAmount, CompanyId id ) ->
             row
-                [ width <| px 100
+                [ width <| px pillWidth
                 , height <| px 44
-                , Background.color companyColor.colour
-                , Border.width 2
-                , Border.color <| rgb255 60 60 60
-                , Border.rounded 4
                 ]
                 [ Input.button
                     [ width fill
                     , height fill
+                    , Border.widthEach { left = 2, top = 2, bottom = 2, right = 0 }
+                    , Border.roundEach { topLeft = 4, topRight = 0, bottomLeft = 4, bottomRight = 0 }
+                    , Border.color <| rgb255 60 60 60
+                    , Background.color companyColor.colour
                     , mouseOver
                         [ Background.color <| dim companyColor.colour
-                        , Border.color <| rgb255 180 180 180
                         ]
                     , mouseDown
                         [ Background.color <| glow companyColor.colour
-                        , Border.color <| rgb255 120 120 120
                         ]
-                    , Font.color <| brightnessColour companyColor.textBrightness
                     ]
                     { onPress =
                         Just <| NavMsg <| SelectCompany (CompanyId id)
                     , label =
-                        el
-                            [ width fill ]
-                        <|
-                            text <|
+                        row
+                            [ alignRight
+                            , paddingEach { zeroes | right = 6 }
+                            , Font.color <| textColourForCompany companyColor
+                            ]
+                            [ el
+                                []
+                              <|
+                                html <|
+                                    (FontAwesome.Solid.dollarSign
+                                        |> FontAwesome.withId ("company-select-dollar-" ++ String.fromInt id)
+                                        |> FontAwesome.titled "$"
+                                        |> FontAwesome.styled
+                                            [ FontAwesome.Attributes.xs
+                                            , FontAwesome.Attributes.fw
+                                            ]
+                                        |> FontAwesome.view
+                                    )
+                            , text <|
                                 String.fromInt runAmount
+                            ]
                     }
                 , Input.button
-                    [ width <| px 30
+                    [ width <| px 40
                     , paddingEach { zeroes | right = 2 }
                     , height fill
                     , Font.center
-                    , Background.color
-                        (case companyColor.textBrightness of
-                            Dark ->
-                                dim companyColor.colour
-
-                            Light ->
-                                glow companyColor.colour
-                        )
+                    , Background.color <| rgb255 40 10 10
                     , Border.roundEach { topLeft = 0, topRight = 4, bottomLeft = 0, bottomRight = 4 }
-                    , Border.widthEach { zeroes | left = 2 }
-                    , Border.color <| rgb255 0 0 0
+                    , Border.widthEach { left = 2, top = 2, bottom = 2, right = 2 }
+                    , Border.color <| rgb255 60 60 60
                     , mouseOver
-                        [ Background.color
-                            (case companyColor.textBrightness of
-                                Dark ->
-                                    dim companyColor.colour
-
-                                Light ->
-                                    glow companyColor.colour
-                            )
+                        [ Background.color <| rgb255 100 10 10
                         , Border.color <| rgba255 0 0 0 0.5
                         ]
                     , mouseDown
@@ -115,7 +133,6 @@ colourPicker game companyColor =
                             )
                         , Border.color <| rgb255 120 120 120
                         ]
-                    , Font.color <| brightnessColour companyColor.textBrightness
                     ]
                     { onPress =
                         Just <| CompanyMsg <| DeleteCompany (CompanyId id)
@@ -123,12 +140,13 @@ colourPicker game companyColor =
                         el
                             [ centerX
                             , paddingXY 0 0
+                            , Font.color <| rgba255 255 255 255 0.8
                             ]
                         <|
                             html <|
                                 (FontAwesome.Regular.trashCan
                                     |> FontAwesome.withId ("company-delete-company-" ++ String.fromInt id)
-                                    |> FontAwesome.titled "Delete company"
+                                    |> FontAwesome.titled ("Delete company " ++ String.fromInt id)
                                     |> FontAwesome.styled
                                         [ FontAwesome.Attributes.xs
                                         , FontAwesome.Attributes.fw
@@ -140,7 +158,7 @@ colourPicker game companyColor =
 
         Nothing ->
             Input.button
-                [ width <| px 100
+                [ width <| px pillWidth
                 , height <| px 44
                 , Region.description companyColor.name
                 , Background.color companyColor.colour
@@ -155,13 +173,13 @@ colourPicker game companyColor =
                     [ Background.color <| glow companyColor.colour
                     , Border.color <| rgb255 120 120 120
                     ]
-                , Font.color <| brightnessColour companyColor.textBrightness
+                , Font.color <| textColourForCompany companyColor
                 ]
                 { onPress =
-                    Just <| CompanyMsg <| AddCompany companyColor.colour
+                    Just <| CompanyMsg <| AddCompany companyColor
                 , label =
                     el
-                        [ width <| px 30
+                        [ paddingXY 10 0
                         , alignRight
                         ]
                     <|
@@ -176,28 +194,6 @@ colourPicker game companyColor =
                                 |> FontAwesome.view
                             )
                 }
-
-
-type TextBrightness
-    = Dark
-    | Light
-
-
-brightnessColour : TextBrightness -> Color
-brightnessColour textBrightness =
-    case textBrightness of
-        Dark ->
-            rgba255 0 0 0 0.8
-
-        Light ->
-            rgba255 255 255 255 0.8
-
-
-type alias CompanyColour =
-    { colour : Color
-    , name : String
-    , textBrightness : TextBrightness
-    }
 
 
 colours : List CompanyColour
@@ -278,7 +274,8 @@ companySelector company =
     Input.button
         [ height <| px 20
         , width <| px 30
-        , Background.color company.colour
+        , Background.color company.colourInfo.colour
+        , Region.description ("Select " ++ company.colourInfo.name ++ " company")
         ]
         { onPress = Just <| NavMsg <| SelectCompany company.id
         , label = Element.none

@@ -1,13 +1,13 @@
-module Utilities exposing (arrayRemoveAt, arrayUpdateAt, darken, dim, glow, lighten, routesTotal, zeroes)
+module Utilities exposing (arrayRemoveAt, arrayUpdateAt, darken, dim, glow, lighten, routesTotal, setFocus, setRoutes, zeroes)
 
 import Array exposing (Array)
 import Element exposing (Color)
-import Model exposing (RoutesData)
+import Model exposing (Company, Focus, RoutesData)
 
 
 routesTotal : RoutesData -> Int
 routesTotal routesData =
-    routesData.routes
+    routesData.company.routes
         |> Array.foldl (+) 0
 
 
@@ -56,6 +56,20 @@ arrayRemoveAt index array =
                     Array.slice (index + 1) (Array.length array) array
             in
             Array.append left right
+
+
+setRoutes : Array Int -> RoutesData -> RoutesData
+setRoutes routes data =
+    let
+        company =
+            data.company
+    in
+    { data | company = { company | routes = routes } }
+
+
+setFocus : Focus -> RoutesData -> RoutesData
+setFocus focus data =
+    { data | focus = focus }
 
 
 clamp : Float -> Float

@@ -6,6 +6,7 @@ import Element exposing (Color, Element)
 
 type alias Flags =
     { assets : Assets
+    , viewport : WindowDimensions
     }
 
 
@@ -17,6 +18,7 @@ type alias Model =
     { lifecycle : Lifecycle
     , assets : Assets
     , game : Game
+    , windowDimensions : WindowDimensions
     }
 
 
@@ -30,6 +32,12 @@ type alias Game =
     }
 
 
+type alias WindowDimensions =
+    { width : Int
+    , height : Int
+    }
+
+
 type Lifecycle
     = Welcome
     | Companies
@@ -37,21 +45,32 @@ type Lifecycle
 
 
 type alias RoutesData =
-    { routes : Array Int
-    , focus : Focus
-    , companyId : CompanyId
+    { focus : Focus
+    , company : Company
     }
 
 
 type alias Company =
     { routes : Array Int
-    , colour : Color
+    , colourInfo : CompanyColour
     , id : CompanyId
     }
 
 
 type CompanyId
     = CompanyId Int
+
+
+type alias CompanyColour =
+    { colour : Color
+    , name : String
+    , textBrightness : TextBrightness
+    }
+
+
+type TextBrightness
+    = Dark
+    | Light
 
 
 type Focus
@@ -77,6 +96,7 @@ type alias Ui =
 
 type Msg
     = NoOp
+    | Resized { width : Int, height : Int }
     | Start
     | NavMsg NavMsg
     | CompanyMsg CompanyMsg
@@ -86,12 +106,11 @@ type Msg
 type NavMsg
     = GoToWelcome
     | GoToCompanies
-    | GoToRoutes CompanyId
     | SelectCompany CompanyId
 
 
 type CompanyMsg
-    = AddCompany Color
+    = AddCompany CompanyColour
     | DeleteCompany CompanyId
 
 

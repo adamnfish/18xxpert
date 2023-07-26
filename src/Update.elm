@@ -1,9 +1,11 @@
 module Update exposing (..)
 
 import Array
+import Browser.Dom
 import Element exposing (rgb255)
 import Model exposing (..)
-import Utilities exposing (arrayRemoveAt, arrayUpdateAt)
+import Task
+import Utilities exposing (arrayRemoveAt, arrayUpdateAt, setFocus, setRoutes)
 
 
 
@@ -15,6 +17,13 @@ update msg model =
     case msg of
         NoOp ->
             ( model, Cmd.none )
+
+        Resized dimensions ->
+            ( { model
+                | windowDimensions = dimensions
+              }
+            , Cmd.none
+            )
 
         Start ->
             -- screen for choosing the first company
@@ -47,33 +56,14 @@ update msg model =
                     , Cmd.none
                     )
 
-                GoToRoutes (CompanyId companyId) ->
-                    case Array.get companyId model.game.companies of
-                        Just company ->
-                            ( { model
-                                | lifecycle =
-                                    Routes
-                                        { routes = company.routes
-                                        , focus = Unfocused
-                                        , companyId = company.id
-                                        }
-                              }
-                            , Cmd.none
-                            )
-
-                        Nothing ->
-                            -- error
-                            ( model, Cmd.none )
-
                 SelectCompany (CompanyId companyId) ->
                     case Array.get companyId model.game.companies of
                         Just company ->
                             ( { model
                                 | lifecycle =
                                     Routes
-                                        { routes = company.routes
-                                        , focus = Unfocused
-                                        , companyId = company.id
+                                        { focus = Unfocused
+                                        , company = company
                                         }
                               }
                             , Cmd.none
@@ -105,13 +95,12 @@ update msg model =
                                     -- add new route, focus it, and add this amount to it
                                     let
                                         newRoutes =
-                                            Array.push n data.routes
+                                            Array.push n data.company.routes
 
                                         newRoutesData =
-                                            { data
-                                                | routes = newRoutes
-                                                , focus = Focused <| Array.length data.routes
-                                            }
+                                            data
+                                                |> setRoutes newRoutes
+                                                |> setFocus (Focused <| Array.length data.company.routes)
                                     in
                                     ( { model
                                         | lifecycle = Routes newRoutesData
@@ -121,7 +110,7 @@ update msg model =
                                     )
 
                                 Focused focusIndex ->
-                                    case Array.get focusIndex data.routes of
+                                    case Array.get focusIndex data.company.routes of
                                         Just currentAmount ->
                                             let
                                                 newAmount =
@@ -134,10 +123,11 @@ update msg model =
                                                         currentAmount * 10 + n
 
                                                 newRoutes =
-                                                    Array.set focusIndex newAmount data.routes
+                                                    Array.set focusIndex newAmount data.company.routes
 
                                                 newRoutesData =
-                                                    { data | routes = newRoutes }
+                                                    data
+                                                        |> setRoutes newRoutes
                                             in
                                             ( { model
                                                 | lifecycle = Routes newRoutesData
@@ -163,18 +153,18 @@ update msg model =
                         DeleteRoute index ->
                             let
                                 newRoutes =
-                                    arrayRemoveAt index data.routes
+                                    arrayRemoveAt index data.company.routes
 
                                 newData =
-                                    { data
-                                        | routes = newRoutes
-                                        , focus =
-                                            if data.focus == Focused index then
+                                    data
+                                        |> setRoutes newRoutes
+                                        |> setFocus
+                                            (if data.focus == Focused index then
                                                 Unfocused
 
-                                            else
+                                             else
                                                 data.focus
-                                    }
+                                            )
                             in
                             ( { model
                                 | lifecycle = Routes newData
@@ -196,7 +186,7 @@ update msg model =
                                     )
 
                                 Focused focusIndex ->
-                                    case Array.get focusIndex data.routes of
+                                    case Array.get focusIndex data.company.routes of
                                         Just currentAmount ->
                                             let
                                                 newAmount =
@@ -204,15 +194,13 @@ update msg model =
 
                                                 newData =
                                                     if newAmount == 0 then
-                                                        { data
-                                                            | routes = arrayRemoveAt focusIndex data.routes
-                                                            , focus = FocusedNew
-                                                        }
+                                                        data
+                                                            |> setRoutes (arrayRemoveAt focusIndex data.company.routes)
+                                                            |> setFocus FocusedNew
 
                                                     else
-                                                        { data
-                                                            | routes = Array.set focusIndex newAmount data.routes
-                                                        }
+                                                        data
+                                                            |> setRoutes (Array.set focusIndex newAmount data.company.routes)
                                             in
                                             ( { model
                                                 | lifecycle = Routes newData
@@ -243,7 +231,7 @@ update msg model =
 
                 Companies ->
                     case companyMsg of
-                        AddCompany colour ->
+                        AddCompany colourInfo ->
                             let
                                 game =
                                     model.game
@@ -251,11 +239,14 @@ update msg model =
                             ( { model
                                 | lifecycle =
                                     Routes
-                                        { routes = Array.empty
-                                        , focus = Unfocused
-                                        , companyId = CompanyId <| Array.length model.game.companies
+                                        { focus = Unfocused
+                                        , company =
+                                            { id = CompanyId <| Array.length model.game.companies
+                                            , colourInfo = colourInfo
+                                            , routes = Array.empty
+                                            }
                                         }
-                                , game = { game | companies = Array.push { routes = Array.empty, colour = colour, id = CompanyId <| Array.length model.game.companies } model.game.companies }
+                                , game = { game | companies = Array.push { routes = Array.empty, colourInfo = colourInfo, id = CompanyId <| Array.length model.game.companies } model.game.companies }
                               }
                             , Cmd.none
                             )
@@ -280,7 +271,7 @@ updateGameRoute : Game -> RoutesData -> Game
 updateGameRoute game routesData =
     let
         companyIndex =
-            case routesData.companyId of
+            case routesData.company.id of
                 CompanyId i ->
                     i
     in
@@ -290,7 +281,7 @@ updateGameRoute game routesData =
                 companyIndex
                 (\company ->
                     { company
-                        | routes = routesData.routes
+                        | routes = routesData.company.routes
                     }
                 )
                 game.companies
