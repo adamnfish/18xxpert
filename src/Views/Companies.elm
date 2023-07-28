@@ -44,7 +44,7 @@ colourPicker window game companyColor =
     let
         alreadyRunning =
             List.Extra.find
-                (\c -> c.colourInfo.colour == companyColor.colour)
+                (\c -> c.colourInfo.name == companyColor.name)
                 (Array.toList game.companies)
                 |> Maybe.map (\c -> ( Array.foldl (+) 0 c.routes, c.id ))
 

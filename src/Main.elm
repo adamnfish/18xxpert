@@ -4,6 +4,7 @@ import Array exposing (Array)
 import Browser
 import Browser.Events
 import Model exposing (..)
+import Ports exposing (receivePersistedGame, requestPersistedGame)
 import Update exposing (update)
 import Views.View exposing (view)
 
@@ -34,7 +35,7 @@ init flags =
             , height = flags.viewport.height
             }
       }
-    , Cmd.none
+    , requestPersistedGame ()
     )
 
 
@@ -42,4 +43,5 @@ subscriptions : Model -> Sub Msg
 subscriptions model =
     Sub.batch
         [ Browser.Events.onResize (\width height -> Resized { width = width, height = height })
+        , receivePersistedGame UpdateGameFromStorage
         ]

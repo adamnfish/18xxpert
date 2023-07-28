@@ -1,7 +1,9 @@
 module Update exposing (..)
 
 import Array
+import Json.Decode
 import Model exposing (..)
+import Ports exposing (persistGame, requestPersistedGame)
 import Utilities exposing (arrayRemoveAt, arrayUpdateAt, setFocus, setRoutes)
 
 
@@ -98,12 +100,15 @@ update msg model =
                                             data
                                                 |> setRoutes newRoutes
                                                 |> setFocus (Focused <| Array.length data.company.routes)
+
+                                        ( newGame, persistCmd ) =
+                                            updateGameRoute model.game newRoutesData
                                     in
                                     ( { model
                                         | lifecycle = Routes newRoutesData
-                                        , game = updateGameRoute model.game newRoutesData
+                                        , game = newGame
                                       }
-                                    , Cmd.none
+                                    , persistCmd
                                     )
 
                                 Focused focusIndex ->
@@ -125,12 +130,15 @@ update msg model =
                                                 newRoutesData =
                                                     data
                                                         |> setRoutes newRoutes
+
+                                                ( newGame, persistCmd ) =
+                                                    updateGameRoute model.game newRoutesData
                                             in
                                             ( { model
                                                 | lifecycle = Routes newRoutesData
-                                                , game = updateGameRoute model.game newRoutesData
+                                                , game = newGame
                                               }
-                                            , Cmd.none
+                                            , persistCmd
                                             )
 
                                         Nothing ->
@@ -162,12 +170,15 @@ update msg model =
                                              else
                                                 data.focus
                                             )
+
+                                ( newGame, persistCmd ) =
+                                    updateGameRoute model.game newData
                             in
                             ( { model
                                 | lifecycle = Routes newData
-                                , game = updateGameRoute model.game newData
+                                , game = newGame
                               }
-                            , Cmd.none
+                            , persistCmd
                             )
 
                         NumpadBackspace ->
@@ -198,12 +209,15 @@ update msg model =
                                                     else
                                                         data
                                                             |> setRoutes (Array.set focusIndex newAmount data.company.routes)
+
+                                                ( newGame, persistCmd ) =
+                                                    updateGameRoute model.game newData
                                             in
                                             ( { model
                                                 | lifecycle = Routes newData
-                                                , game = updateGameRoute model.game newData
+                                                , game = newGame
                                               }
-                                            , Cmd.none
+                                            , persistCmd
                                             )
 
                                         Nothing ->
@@ -232,6 +246,9 @@ update msg model =
                             let
                                 game =
                                     model.game
+
+                                newGame =
+                                    { game | companies = Array.push { routes = Array.empty, colourInfo = colourInfo, id = CompanyId <| Array.length model.game.companies } model.game.companies }
                             in
                             ( { model
                                 | lifecycle =
@@ -243,9 +260,9 @@ update msg model =
                                             , routes = Array.empty
                                             }
                                         }
-                                , game = { game | companies = Array.push { routes = Array.empty, colourInfo = colourInfo, id = CompanyId <| Array.length model.game.companies } model.game.companies }
+                                , game = newGame
                               }
-                            , Cmd.none
+                            , persistGame <| encodeGame newGame
                             )
 
                         DeleteCompany companyId ->
@@ -260,26 +277,59 @@ update msg model =
                                 | lifecycle = Companies
                                 , game = newGame
                               }
-                            , Cmd.none
+                            , persistGame <| encodeGame newGame
                             )
 
+        UpdateGameFromStorage json ->
+            case Json.Decode.decodeValue (Json.Decode.nullable gameDecoder) json of
+                Ok (Just updatedGame) ->
+                    -- TODO: update current lifecycle data, if needed
+                    ( { model | game = updatedGame }
+                    , Cmd.none
+                    )
 
-updateGameRoute : Game -> RoutesData -> Game
+                Ok Nothing ->
+                    let
+                        _ =
+                            Debug.log "No data loaded from storage" Nothing
+                    in
+                    ( model
+                    , Cmd.none
+                    )
+
+                Err error ->
+                    let
+                        _ =
+                            Debug.log "Error loading from storage" error
+                    in
+                    -- TODO: error
+                    ( model, Cmd.none )
+
+        RequestPersistedGame ->
+            ( model
+            , requestPersistedGame ()
+            )
+
+
+updateGameRoute : Game -> RoutesData -> ( Game, Cmd Msg )
 updateGameRoute game routesData =
     let
         companyIndex =
             case routesData.company.id of
                 CompanyId i ->
                     i
+
+        newGame =
+            { game
+                | companies =
+                    arrayUpdateAt
+                        companyIndex
+                        (\company ->
+                            { company
+                                | routes = routesData.company.routes
+                            }
+                        )
+                        game.companies
+            }
     in
-    { game
-        | companies =
-            arrayUpdateAt
-                companyIndex
-                (\company ->
-                    { company
-                        | routes = routesData.company.routes
-                    }
-                )
-                game.companies
-    }
+    ( newGame, persistGame <| encodeGame newGame )
