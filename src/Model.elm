@@ -5,6 +5,7 @@ import Element exposing (Color, Element)
 import Json.Decode
 import Json.Decode.Pipeline exposing (required)
 import Json.Encode
+import Keyboard.Event exposing (KeyboardEvent)
 
 
 type alias Flags =
@@ -118,6 +119,7 @@ type RoutesMsg
     | FocusOnNewRoute
     | DeleteRoute Int
     | CloseNumpad
+    | KeyboardEntry KeyboardEvent
 
 
 

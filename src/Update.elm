@@ -2,6 +2,7 @@ module Update exposing (..)
 
 import Array
 import Json.Decode
+import Keyboard.Key
 import Model exposing (..)
 import Ports exposing (persistGame, requestPersistedGame)
 import Utilities exposing (arrayRemoveAt, arrayUpdateAt, setFocus, setRoutes)
@@ -85,75 +86,13 @@ update msg model =
                 Routes data ->
                     case routesMsg of
                         NumpadEntry n ->
-                            case data.focus of
-                                Unfocused ->
-                                    -- error
-                                    ( model, Cmd.none )
-
-                                FocusedNew ->
-                                    -- add new route, focus it, and add this amount to it
-                                    let
-                                        newRoutes =
-                                            Array.push n data.company.routes
-
-                                        newRoutesData =
-                                            data
-                                                |> setRoutes newRoutes
-                                                |> setFocus (Focused <| Array.length data.company.routes)
-
-                                        ( newGame, persistCmd ) =
-                                            updateGameRoute model.game newRoutesData
-                                    in
-                                    ( { model
-                                        | lifecycle = Routes newRoutesData
-                                        , game = newGame
-                                      }
-                                    , persistCmd
-                                    )
-
-                                Focused focusIndex ->
-                                    case Array.get focusIndex data.company.routes of
-                                        Just currentAmount ->
-                                            let
-                                                newAmount =
-                                                    -- this limit prevents the number from overflowing
-                                                    -- and ensures the integer division used for backspace works
-                                                    if currentAmount > 999999999 then
-                                                        currentAmount
-
-                                                    else
-                                                        currentAmount * 10 + n
-
-                                                newRoutes =
-                                                    Array.set focusIndex newAmount data.company.routes
-
-                                                newRoutesData =
-                                                    data
-                                                        |> setRoutes newRoutes
-
-                                                ( newGame, persistCmd ) =
-                                                    updateGameRoute model.game newRoutesData
-                                            in
-                                            ( { model
-                                                | lifecycle = Routes newRoutesData
-                                                , game = newGame
-                                              }
-                                            , persistCmd
-                                            )
-
-                                        Nothing ->
-                                            -- error
-                                            ( model, Cmd.none )
+                            routeNumber model data n
 
                         FocusRoute focusIndex ->
-                            ( { model | lifecycle = Routes { data | focus = Focused focusIndex } }
-                            , Cmd.none
-                            )
+                            focusRoute model data focusIndex
 
                         FocusOnNewRoute ->
-                            ( { model | lifecycle = Routes { data | focus = FocusedNew } }
-                            , Cmd.none
-                            )
+                            focusNew model data
 
                         DeleteRoute index ->
                             let
@@ -182,53 +121,83 @@ update msg model =
                             )
 
                         NumpadBackspace ->
-                            case data.focus of
-                                Unfocused ->
-                                    -- error
-                                    ( model, Cmd.none )
-
-                                FocusedNew ->
-                                    -- NoOp
-                                    ( { model | lifecycle = Routes { data | focus = Unfocused } }
-                                    , Cmd.none
-                                    )
-
-                                Focused focusIndex ->
-                                    case Array.get focusIndex data.company.routes of
-                                        Just currentAmount ->
-                                            let
-                                                newAmount =
-                                                    currentAmount // 10
-
-                                                newData =
-                                                    if newAmount == 0 then
-                                                        data
-                                                            |> setRoutes (arrayRemoveAt focusIndex data.company.routes)
-                                                            |> setFocus FocusedNew
-
-                                                    else
-                                                        data
-                                                            |> setRoutes (Array.set focusIndex newAmount data.company.routes)
-
-                                                ( newGame, persistCmd ) =
-                                                    updateGameRoute model.game newData
-                                            in
-                                            ( { model
-                                                | lifecycle = Routes newData
-                                                , game = newGame
-                                              }
-                                            , persistCmd
-                                            )
-
-                                        Nothing ->
-                                            -- error
-                                            ( model, Cmd.none )
+                            routeBackspace model data
 
                         CloseNumpad ->
-                            -- todo: use focus maybe properly
-                            ( { model | lifecycle = Routes { data | focus = Unfocused } }
-                            , Cmd.none
-                            )
+                            closeNumpad model data
+
+                        KeyboardEntry keyboardEvent ->
+                            case keyboardEvent.key of
+                                Just key ->
+                                    case String.toInt key of
+                                        Just n ->
+                                            routeNumber model data n
+
+                                        Nothing ->
+                                            case keyboardEvent.keyCode of
+                                                Keyboard.Key.Backspace ->
+                                                    routeBackspace model data
+
+                                                Keyboard.Key.Escape ->
+                                                    closeNumpad model data
+
+                                                Keyboard.Key.Up ->
+                                                    case data.focus of
+                                                        Focused 0 ->
+                                                            closeNumpad model data
+
+                                                        Focused i ->
+                                                            focusRoute model data (i - 1)
+
+                                                        FocusedNew ->
+                                                            let
+                                                                routeCount =
+                                                                    Array.length data.company.routes
+                                                            in
+                                                            if routeCount > 0 then
+                                                                focusRoute model data (routeCount - 1)
+
+                                                            else
+                                                                closeNumpad model data
+
+                                                        Unfocused ->
+                                                            focusNew model data
+
+                                                Keyboard.Key.Down ->
+                                                    let
+                                                        routeCount =
+                                                            Array.length data.company.routes
+                                                    in
+                                                    case data.focus of
+                                                        Focused i ->
+                                                            if i == routeCount - 1 then
+                                                                focusNew model data
+
+                                                            else
+                                                                focusRoute model data (i + 1)
+
+                                                        FocusedNew ->
+                                                            closeNumpad model data
+
+                                                        Unfocused ->
+                                                            if routeCount > 0 then
+                                                                focusRoute model data 0
+
+                                                            else
+                                                                focusNew model data
+
+                                                Keyboard.Key.Enter ->
+                                                    if data.focus == FocusedNew then
+                                                        closeNumpad model data
+
+                                                    else
+                                                        focusNew model data
+
+                                                _ ->
+                                                    ( model, Cmd.none )
+
+                                Nothing ->
+                                    ( model, Cmd.none )
 
         CompanyMsg companyMsg ->
             case model.lifecycle of
@@ -289,19 +258,11 @@ update msg model =
                     )
 
                 Ok Nothing ->
-                    let
-                        _ =
-                            Debug.log "No data loaded from storage" Nothing
-                    in
                     ( model
                     , Cmd.none
                     )
 
                 Err error ->
-                    let
-                        _ =
-                            Debug.log "Error loading from storage" error
-                    in
                     -- TODO: error
                     ( model, Cmd.none )
 
@@ -309,6 +270,146 @@ update msg model =
             ( model
             , requestPersistedGame ()
             )
+
+
+focusNew : Model -> RoutesData -> ( Model, Cmd Msg )
+focusNew model data =
+    ( { model | lifecycle = Routes { data | focus = FocusedNew } }
+    , Cmd.none
+    )
+
+
+focusRoute : Model -> RoutesData -> Int -> ( Model, Cmd Msg )
+focusRoute model data focusIndex =
+    ( { model | lifecycle = Routes { data | focus = Focused focusIndex } }
+    , Cmd.none
+    )
+
+
+routeNumber : Model -> RoutesData -> Int -> ( Model, Cmd Msg )
+routeNumber model data n =
+    case data.focus of
+        Unfocused ->
+            -- error
+            ( model, Cmd.none )
+
+        FocusedNew ->
+            -- add new route, focus it, and add this amount to it
+            let
+                newRoutes =
+                    Array.push n data.company.routes
+
+                newRoutesData =
+                    data
+                        |> setRoutes newRoutes
+                        |> setFocus (Focused <| Array.length data.company.routes)
+
+                ( newGame, persistCmd ) =
+                    updateGameRoute model.game newRoutesData
+            in
+            ( { model
+                | lifecycle = Routes newRoutesData
+                , game = newGame
+              }
+            , persistCmd
+            )
+
+        Focused focusIndex ->
+            case Array.get focusIndex data.company.routes of
+                Just currentAmount ->
+                    let
+                        newAmount =
+                            -- this limit prevents the number from overflowing
+                            -- and ensures the integer division used for backspace works
+                            if currentAmount > 999999999 then
+                                currentAmount
+
+                            else
+                                currentAmount * 10 + n
+
+                        newRoutes =
+                            Array.set focusIndex newAmount data.company.routes
+
+                        newRoutesData =
+                            data
+                                |> setRoutes newRoutes
+
+                        ( newGame, persistCmd ) =
+                            updateGameRoute model.game newRoutesData
+                    in
+                    ( { model
+                        | lifecycle = Routes newRoutesData
+                        , game = newGame
+                      }
+                    , persistCmd
+                    )
+
+                Nothing ->
+                    -- error
+                    ( model, Cmd.none )
+
+
+routeBackspace : Model -> RoutesData -> ( Model, Cmd Msg )
+routeBackspace model data =
+    case data.focus of
+        Unfocused ->
+            -- error
+            ( model, Cmd.none )
+
+        FocusedNew ->
+            -- NoOp
+            ( { model | lifecycle = Routes { data | focus = Unfocused } }
+            , Cmd.none
+            )
+
+        Focused focusIndex ->
+            case Array.get focusIndex data.company.routes of
+                Just currentAmount ->
+                    let
+                        newAmount =
+                            currentAmount // 10
+
+                        newData =
+                            if newAmount == 0 then
+                                let
+                                    routeCount =
+                                        Array.length data.company.routes
+
+                                    nextFocus =
+                                        if routeCount - 1 > focusIndex then
+                                            Focused <| focusIndex
+
+                                        else
+                                            FocusedNew
+                                in
+                                data
+                                    |> setRoutes (arrayRemoveAt focusIndex data.company.routes)
+                                    |> setFocus nextFocus
+
+                            else
+                                data
+                                    |> setRoutes (Array.set focusIndex newAmount data.company.routes)
+
+                        ( newGame, persistCmd ) =
+                            updateGameRoute model.game newData
+                    in
+                    ( { model
+                        | lifecycle = Routes newData
+                        , game = newGame
+                      }
+                    , persistCmd
+                    )
+
+                Nothing ->
+                    -- error
+                    ( model, Cmd.none )
+
+
+closeNumpad : Model -> RoutesData -> ( Model, Cmd Msg )
+closeNumpad model data =
+    ( { model | lifecycle = Routes { data | focus = Unfocused } }
+    , Cmd.none
+    )
 
 
 updateGameRoute : Game -> RoutesData -> ( Game, Cmd Msg )
