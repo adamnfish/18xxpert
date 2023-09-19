@@ -573,7 +573,7 @@ companySelector game (CompanyId selectedCompanyId) company =
                 [ centerX, centerY ]
             <|
                 html <|
-                    (FontAwesome.Solid.pen
+                    (FontAwesome.Solid.angleDown
                         |> FontAwesome.withId ("company-nav-selected-" ++ String.fromInt selectedCompanyId)
                         |> FontAwesome.titled ("company " ++ String.fromInt selectedCompanyId)
                         |> FontAwesome.styled

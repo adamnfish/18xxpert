@@ -269,19 +269,6 @@ colours =
     ]
 
 
-companySelector : Company -> Element Msg
-companySelector company =
-    Input.button
-        [ height <| px 20
-        , width <| px 30
-        , Background.color company.colourInfo.colour
-        , Region.description ("Select " ++ company.colourInfo.name ++ " company")
-        ]
-        { onPress = Just <| NavMsg <| SelectCompany company.id
-        , label = Element.none
-        }
-
-
 colourId : Color -> String
 colourId color =
     Element.toRgb color

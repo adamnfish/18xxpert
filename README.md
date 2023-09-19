@@ -5,7 +5,7 @@ A player aid for 18xx games.
 
 🔗 [https://adamnfish.github.io/18xxpert/](https://adamnfish.github.io/18xxpert/)
 
-It allows players to keep track of the value of their routes, and aids the calculation of dividend payments.
+It allows players to keep track of the value of their routes and aids the calculation of dividend payments.
 
 # Development
 
