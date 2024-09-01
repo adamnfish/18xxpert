@@ -4,7 +4,7 @@ on:
   # when main is updated
   push:
     branches:
-      - $default-branch
+      - main
 
   # and allow manual invocation
   workflow_dispatch:
