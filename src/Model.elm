@@ -118,6 +118,7 @@ type RoutesMsg
     | FocusRoute Int
     | FocusOnNewRoute
     | DeleteRoute Int
+    | RouteDelta Int
     | CloseNumpad
     | KeyboardEntry KeyboardEvent
 

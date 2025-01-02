@@ -123,6 +123,9 @@ update msg model =
                         NumpadBackspace ->
                             routeBackspace model data
 
+                        RouteDelta delta ->
+                            routeDelta model data delta
+
                         CloseNumpad ->
                             closeNumpad model data
 
@@ -284,6 +287,46 @@ focusRoute model data focusIndex =
     ( { model | lifecycle = Routes { data | focus = Focused focusIndex } }
     , Cmd.none
     )
+
+
+routeDelta : Model -> RoutesData -> Int -> ( Model, Cmd Msg )
+routeDelta model data delta =
+    case data.focus of
+        Unfocused ->
+            -- error
+            ( model, Cmd.none )
+
+        FocusedNew ->
+            -- error
+            ( model, Cmd.none )
+
+        Focused focusIndex ->
+            case Array.get focusIndex data.company.routes of
+                Just currentAmount ->
+                    let
+                        newAmount =
+                            currentAmount + delta
+
+                        newRoutes =
+                            Array.set focusIndex newAmount data.company.routes
+
+                        newRoutesData =
+                            data
+                                |> setRoutes newRoutes
+
+                        ( newGame, persistCmd ) =
+                            updateGameRoute model.game newRoutesData
+                    in
+                    ( { model
+                        | lifecycle = Routes newRoutesData
+                        , game = newGame
+                      }
+                    , persistCmd
+                    )
+
+                Nothing ->
+                    -- error
+                    ( model, Cmd.none )
 
 
 routeNumber : Model -> RoutesData -> Int -> ( Model, Cmd Msg )

@@ -287,7 +287,7 @@ routeUi focus index amount =
     in
     row
         [ width fill
-        , paddingEach { zeroes | right = 5 }
+        , paddingEach { zeroes | right = 0 }
         , Background.color <|
             if focused then
                 rgb255 60 200 60
@@ -346,16 +346,31 @@ routeUi focus index amount =
                             String.fromInt amount
                     ]
             }
+        , if focused then
+            row []
+                [ Input.button
+                    []
+                    { onPress = Just <| RoutesMsg <| RouteDelta -10
+                    , label = text "- 10"
+                    }
+                , Input.button
+                    []
+                    { onPress = Just <| RoutesMsg <| RouteDelta 10
+                    , label = text "+ 10"
+                    }
+                ]
+
+          else
+            Element.none
         , Input.button
-            [ width <| px 40
-            , height <| px 40
+            [ width <| px 35
+            , height fill
             , if focused then
                 Background.color <| rgb255 160 160 160
 
               else
                 Background.color <| rgb255 200 160 160
             , Font.center
-            , Border.rounded 20
             ]
             { onPress =
                 if focused then
