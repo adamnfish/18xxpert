@@ -12,6 +12,7 @@ import FontAwesome.Attributes
 import FontAwesome.Regular
 import FontAwesome.Solid
 import FontAwesome.Styles
+import Html.Attributes
 import List.Extra
 import Model exposing (..)
 import Utilities exposing (routesTotal, zeroes)
@@ -108,11 +109,12 @@ routesUi game routesData =
                                                 |> FontAwesome.view
                                             )
                                     , el
-                                        [ Font.size 18
+                                        [ paddingXY 7 0
+                                        , Font.size 18
                                         , Font.color <| rgb255 80 80 80
                                         ]
                                       <|
-                                        text "Add route"
+                                        text "add route"
                                     ]
                             }
 
@@ -140,11 +142,12 @@ routesUi game routesData =
                                                 |> FontAwesome.view
                                             )
                                     , el
-                                        [ Font.size 18
+                                        [ paddingXY 7 0
+                                        , Font.size 18
                                         , Font.color <| rgb255 80 80 80
                                         ]
                                       <|
-                                        text "Add route"
+                                        text "add route"
                                     ]
                             }
 
@@ -152,11 +155,12 @@ routesUi game routesData =
                         row
                             [ width fill
                             , height <| px 60
-                            , paddingEach { top = 10, left = 10, bottom = 10, right = 5 }
                             , Background.color <| rgb255 60 200 60
                             ]
                             [ el
-                                [ width <| px 40 ]
+                                [ width <| px 40
+                                , padding 10
+                                ]
                               <|
                                 html <|
                                     (FontAwesome.Solid.chevronRight
@@ -168,7 +172,7 @@ routesUi game routesData =
                                             ]
                                         |> FontAwesome.view
                                     )
-                            , el [] <|
+                            , el [ padding 10 ] <|
                                 html <|
                                     (FontAwesome.Solid.dollarSign
                                         |> FontAwesome.withId "route-dollar-sign-new"
@@ -180,12 +184,13 @@ routesUi game routesData =
                                         |> FontAwesome.view
                                     )
                             , Input.button
-                                [ width <| px 40
-                                , height <| px 40
+                                [ width <| px 35
+                                , height fill
                                 , alignRight
-                                , Background.color <| rgb255 200 160 160
+                                , Background.color <| rgb255 160 160 160
                                 , Font.center
-                                , Border.rounded 20
+                                , Border.widthEach { zeroes | left = 4, top = 1, bottom = 1 }
+                                , Border.color <| rgb255 60 60 60
                                 ]
                                 { onPress = Just <| RoutesMsg CloseNumpad
                                 , label =
@@ -287,7 +292,6 @@ routeUi focus index amount =
     in
     row
         [ width fill
-        , paddingEach { zeroes | right = 5 }
         , Background.color <|
             if focused then
                 rgb255 60 200 60
@@ -341,21 +345,125 @@ routeUi focus index amount =
                                     ]
                                 |> FontAwesome.view
                             )
-                    , el [] <|
-                        text <|
-                            String.fromInt amount
+                    , if focused then
+                        row
+                            []
+                            [ text <|
+                                String.fromInt amount
+                            , el
+                                [ height fill
+                                , paddingEach { zeroes | right = 2 }
+                                , Border.widthEach { zeroes | right = 1 }
+                                , Border.color <| rgba255 60 60 60 0.6
+                                , htmlAttribute <| Html.Attributes.style "animation" "blink 1s linear infinite"
+                                ]
+                                Element.none
+                            ]
+
+                      else
+                        el [] <|
+                            text <|
+                                String.fromInt amount
                     ]
             }
+        , if focused then
+            let
+                deltaButtonAttrs =
+                    [ width <| px 49
+                    , padding 5
+                    , Background.color <| rgb255 160 160 160
+                    , Border.color <| rgb255 60 60 60
+                    ]
+            in
+            el
+                [ alignRight
+                , height fill
+                , paddingXY 5 0
+                ]
+            <|
+                el
+                    [ height fill
+                    , width <| px 49
+                    , above <|
+                        Input.button
+                            ([ moveDown 18
+                             , Border.widthEach { bottom = 4, top = 1, left = 1, right = 1 }
+                             ]
+                                ++ deltaButtonAttrs
+                            )
+                            { onPress = Just <| RoutesMsg <| RouteDelta 10
+                            , label =
+                                el
+                                    [ width fill
+                                    , centerX
+                                    , moveRight 3
+                                    ]
+                                <|
+                                    html <|
+                                        (FontAwesome.Solid.plus
+                                            |> FontAwesome.withId ("route-increment-" ++ String.fromInt index)
+                                            |> FontAwesome.titled "add 10"
+                                            |> FontAwesome.styled
+                                                [ FontAwesome.Attributes.sm
+                                                , FontAwesome.Attributes.fw
+                                                ]
+                                            |> FontAwesome.view
+                                        )
+                            }
+                    , below <|
+                        Input.button
+                            ([ moveUp 18
+                             , Border.widthEach { bottom = 1, top = 4, left = 1, right = 1 }
+                             ]
+                                ++ deltaButtonAttrs
+                            )
+                            { onPress = Just <| RoutesMsg <| RouteDelta -10
+                            , label =
+                                el
+                                    [ width fill
+                                    , centerX
+                                    , moveRight 3
+                                    ]
+                                <|
+                                    html <|
+                                        (FontAwesome.Solid.minus
+                                            |> FontAwesome.withId ("route-decrement-" ++ String.fromInt index)
+                                            |> FontAwesome.titled "subtract 10"
+                                            |> FontAwesome.styled
+                                                [ FontAwesome.Attributes.sm
+                                                , FontAwesome.Attributes.fw
+                                                ]
+                                            |> FontAwesome.view
+                                        )
+                            }
+                    ]
+                <|
+                    el
+                        [ width <| px 32
+                        , height <| px 32
+                        , centerY
+                        , centerX
+                        , Font.size 12
+                        , Font.color <| rgb255 200 200 200
+                        , Background.color <| rgb255 60 60 60
+                        ]
+                    <|
+                        el [ centerX, centerY ] <|
+                            text "10"
+
+          else
+            Element.none
         , Input.button
-            [ width <| px 40
-            , height <| px 40
+            [ width <| px 35
+            , height fill
             , if focused then
                 Background.color <| rgb255 160 160 160
 
               else
                 Background.color <| rgb255 200 160 160
             , Font.center
-            , Border.rounded 20
+            , Border.widthEach { zeroes | left = 4, top = 1, bottom = 1 }
+            , Border.color <| rgb255 60 60 60
             ]
             { onPress =
                 if focused then
