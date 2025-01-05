@@ -304,8 +304,9 @@ routeDelta model data delta =
             case Array.get focusIndex data.company.routes of
                 Just currentAmount ->
                     let
+                        -- the `max` ensures we can't go to negative values
                         newAmount =
-                            currentAmount + delta
+                            max 0 <| currentAmount + delta
 
                         newRoutes =
                             Array.set focusIndex newAmount data.company.routes
