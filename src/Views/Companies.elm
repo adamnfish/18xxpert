@@ -73,6 +73,7 @@ colourPicker window game companyColor =
                 [ Input.button
                     [ width fill
                     , height fill
+                    , Region.description companyColor.name
                     , Border.widthEach { left = 2, top = 2, bottom = 2, right = 0 }
                     , Border.roundEach { topLeft = 4, topRight = 0, bottomLeft = 4, bottomRight = 0 }
                     , Border.color <| rgb255 60 60 60
@@ -111,6 +112,7 @@ colourPicker window game companyColor =
                     }
                 , Input.button
                     [ width <| px 40
+                    , Region.description ("delete " ++ companyColor.name)
                     , paddingEach { zeroes | right = 2 }
                     , height fill
                     , Font.center

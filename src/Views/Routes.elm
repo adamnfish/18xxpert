@@ -7,6 +7,7 @@ import Element.Border as Border
 import Element.Events
 import Element.Font as Font
 import Element.Input as Input
+import Element.Region as Region
 import FontAwesome exposing (Icon, WithoutId)
 import FontAwesome.Attributes
 import FontAwesome.Regular
@@ -388,6 +389,7 @@ routeUi focus index amount =
                         Input.button
                             ([ moveDown 18
                              , Border.widthEach { bottom = 4, top = 1, left = 1, right = 1 }
+                             , Region.description "add 10"
                              ]
                                 ++ deltaButtonAttrs
                             )
@@ -414,6 +416,7 @@ routeUi focus index amount =
                         Input.button
                             ([ moveUp 18
                              , Border.widthEach { bottom = 1, top = 4, left = 1, right = 1 }
+                             , Region.description "subtract 10"
                              ]
                                 ++ deltaButtonAttrs
                             )
@@ -464,6 +467,12 @@ routeUi focus index amount =
             , Font.center
             , Border.widthEach { zeroes | left = 4, top = 1, bottom = 1 }
             , Border.color <| rgb255 60 60 60
+            , Region.description <|
+                if focused then
+                    "Cancel"
+
+                else
+                    "Delete route " ++ String.fromInt (index + 1)
             ]
             { onPress =
                 if focused then
@@ -487,7 +496,7 @@ routeUi focus index amount =
                         else
                             FontAwesome.Solid.trashCan
                                 |> FontAwesome.withId ("route-delete-" ++ String.fromInt index)
-                                |> FontAwesome.titled "Delete route"
+                                |> FontAwesome.titled ("Delete route " ++ String.fromInt (index + 1))
                                 |> FontAwesome.styled
                                     [ FontAwesome.Attributes.xs
                                     , FontAwesome.Attributes.fw
@@ -500,7 +509,7 @@ routeUi focus index amount =
 numpad : Focus -> Element Msg
 numpad focus =
     let
-        buttonAttrs =
+        buttonAttrs number =
             [ width fill
             , height <| px 60
             , Background.color <| rgb255 200 200 200
@@ -510,6 +519,7 @@ numpad focus =
             , mouseDown
                 [ Background.color <| rgb255 220 220 220
                 ]
+            , Region.description number
             ]
     in
     if focus == Unfocused then
@@ -530,17 +540,17 @@ numpad focus =
                 , spacing 4
                 ]
                 [ Input.button
-                    buttonAttrs
+                    (buttonAttrs "1")
                     { onPress = Just <| RoutesMsg <| NumpadEntry 1
                     , label = numpadKey 1 FontAwesome.Solid.fa1
                     }
                 , Input.button
-                    buttonAttrs
+                    (buttonAttrs "2")
                     { onPress = Just <| RoutesMsg <| NumpadEntry 2
                     , label = numpadKey 2 FontAwesome.Solid.fa2
                     }
                 , Input.button
-                    buttonAttrs
+                    (buttonAttrs "3")
                     { onPress = Just <| RoutesMsg <| NumpadEntry 3
                     , label = numpadKey 3 FontAwesome.Solid.fa3
                     }
@@ -550,17 +560,17 @@ numpad focus =
                 , spacing 4
                 ]
                 [ Input.button
-                    buttonAttrs
+                    (buttonAttrs "4")
                     { onPress = Just <| RoutesMsg <| NumpadEntry 4
                     , label = numpadKey 4 FontAwesome.Solid.fa4
                     }
                 , Input.button
-                    buttonAttrs
+                    (buttonAttrs "5")
                     { onPress = Just <| RoutesMsg <| NumpadEntry 5
                     , label = numpadKey 5 FontAwesome.Solid.fa5
                     }
                 , Input.button
-                    buttonAttrs
+                    (buttonAttrs "6")
                     { onPress = Just <| RoutesMsg <| NumpadEntry 6
                     , label = numpadKey 6 FontAwesome.Solid.fa6
                     }
@@ -570,17 +580,17 @@ numpad focus =
                 , spacing 4
                 ]
                 [ Input.button
-                    buttonAttrs
+                    (buttonAttrs "7")
                     { onPress = Just <| RoutesMsg <| NumpadEntry 7
                     , label = numpadKey 7 FontAwesome.Solid.fa7
                     }
                 , Input.button
-                    buttonAttrs
+                    (buttonAttrs "8")
                     { onPress = Just <| RoutesMsg <| NumpadEntry 8
                     , label = numpadKey 8 FontAwesome.Solid.fa8
                     }
                 , Input.button
-                    buttonAttrs
+                    (buttonAttrs "9")
                     { onPress = Just <| RoutesMsg <| NumpadEntry 9
                     , label = numpadKey 9 FontAwesome.Solid.fa9
                     }
@@ -590,7 +600,7 @@ numpad focus =
                 , spacing 4
                 ]
                 [ Input.button
-                    buttonAttrs
+                    (buttonAttrs "backspace")
                     { onPress = Just <| RoutesMsg <| NumpadBackspace
                     , label =
                         el
@@ -609,12 +619,12 @@ numpad focus =
                                 )
                     }
                 , Input.button
-                    buttonAttrs
+                    (buttonAttrs "0")
                     { onPress = Just <| RoutesMsg <| NumpadEntry 0
                     , label = numpadKey 0 FontAwesome.Solid.fa0
                     }
                 , Input.button
-                    buttonAttrs
+                    (buttonAttrs "close numpad")
                     { onPress = Just <| RoutesMsg CloseNumpad
                     , label =
                         el
@@ -703,6 +713,7 @@ companySelector game (CompanyId selectedCompanyId) company =
                 , Font.color <| textColourForCompany company.colourInfo
                 , Border.color <| rgb255 60 60 60
                 , Border.rounded 4
+                , Region.description (company.colourInfo.name ++ " company")
                 ]
                 { onPress = Just <| NavMsg <| SelectCompany company.id
                 , label =

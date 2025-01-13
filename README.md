@@ -27,4 +27,12 @@ To build the production version, run:
 
     $ npm run build
 
-This will create a `docs` directory containing the production files, suitable for use with GitHub Pages.
+This will create a `build` directory containing the production files.
+
+## end-to-end tests
+
+The project contains end-to-end tests that use a browser to go through a typical user journey.
+
+    $ npm run e2e
+
+This will exercise the app's features, and generate a test report that includes screenshots.
