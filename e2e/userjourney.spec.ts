@@ -2,8 +2,6 @@ import { test, expect } from '@playwright/test';
 import { screenshot } from './utils';
 
 test('verifies a real user journey through the app', async ({ page }, testInfo) => {
-  await page.setViewportSize({ width: 412, height: 915 });
-
   // load homepage
   await page.goto('/');
   await screenshot('welcome', page, testInfo);
