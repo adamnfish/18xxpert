@@ -17,7 +17,7 @@
     "@parcel/transformer-elm": "^2.15.4",
     "@parcel/transformer-webmanifest": "^2.15.4",
     "@parcel/transformer-xml": "^2.15.4",
-    "@playwright/test": "^1.54.2",
+    "@playwright/test": "^1.56.1",
     "@types/node": "^22.17.0",
     "elm": "^0.19.1-5",
     "elm-format": "^0.8.8",
