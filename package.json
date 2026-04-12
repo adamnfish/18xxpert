@@ -11,19 +11,19 @@
   "author": "",
   "license": "ISC",
   "devDependencies": {
-    "@parcel/optimizer-svgo": "^2.15.4",
-    "@parcel/packager-raw-url": "^2.15.4",
-    "@parcel/packager-xml": "^2.15.4",
-    "@parcel/transformer-elm": "^2.15.4",
-    "@parcel/transformer-webmanifest": "^2.15.4",
-    "@parcel/transformer-xml": "^2.15.4",
-    "@playwright/test": "^1.56.1",
-    "@types/node": "^22.17.0",
+    "@parcel/optimizer-svgo": "^2.16.4",
+    "@parcel/packager-raw-url": "^2.16.4",
+    "@parcel/packager-xml": "^2.16.4",
+    "@parcel/transformer-elm": "^2.16.4",
+    "@parcel/transformer-webmanifest": "^2.16.4",
+    "@parcel/transformer-xml": "^2.16.4",
+    "@playwright/test": "^1.59.1",
+    "@types/node": "^25.6.0",
     "elm": "^0.19.1-5",
     "elm-format": "^0.8.8",
-    "elm-test": "^0.19.1-revision16",
-    "parcel": "^2.15.4",
+    "elm-test": "^0.19.1-revision17",
+    "parcel": "^2.16.4",
     "sharp": "^0.33.5",
-    "svgo": "^3.3.2"
+    "svgo": "4.0.1"
   }
 }
